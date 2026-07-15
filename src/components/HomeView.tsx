@@ -64,22 +64,24 @@ export function HomeView({
   return (
     <div className="max-w-[900px] mx-auto py-16 px-4 space-y-20 md:space-y-24">
       
-      {/* Pixel Drift Banner */}
-      <PixelDriftBanner />
+      {/* Hero Section with Pixel Drift Banner Background */}
+      <section className="relative rounded-2xl border border-outline-variant shadow-2xl overflow-hidden">
+        <PixelDriftBanner />
 
-      {/* Centered Editorial Header */}
-      <section className="text-center space-y-6 pt-6">
-        <div className="flex justify-center mb-2">
-          <span className="px-3.5 py-1.5 rounded-full bg-surface-container border border-outline-variant text-text-muted font-mono text-[9px] tracking-widest uppercase">
-            Product Thinking Operating System
-          </span>
+        {/* Content overlaid on banner */}
+        <div className="relative z-10 text-center space-y-6 py-20 px-4 md:py-28 md:px-8 bg-gradient-to-b from-transparent to-background/20">
+          <div className="flex justify-center mb-2">
+            <span className="px-3.5 py-1.5 rounded-full bg-surface-container/60 backdrop-blur-md border border-outline-variant text-text-muted font-mono text-[9px] tracking-widest uppercase">
+              Product Thinking Operating System
+            </span>
+          </div>
+          <h1 className="font-display text-4xl md:text-[56px] text-on-surface leading-[1.1] tracking-tight font-medium max-w-2xl mx-auto drop-shadow-sm">
+            "I want to think <span className="italic font-serif opacity-50">here</span>."
+          </h1>
+          <p className="text-sm md:text-base text-text-muted max-w-xl mx-auto leading-relaxed drop-shadow-sm">
+            Foundry is the first place you visit whenever an idea is born. Overcome ambiguity, audit technical assumptions, and orchestrate buildable products.
+          </p>
         </div>
-        <h1 className="font-display text-4xl md:text-[56px] text-on-surface leading-[1.1] tracking-tight font-medium max-w-2xl mx-auto">
-          "I want to think <span className="italic font-serif opacity-50">here</span>."
-        </h1>
-        <p className="text-sm md:text-base text-text-muted max-w-xl mx-auto leading-relaxed">
-          Foundry is the first place you visit whenever an idea is born. Overcome ambiguity, audit technical assumptions, and orchestrate buildable products.
-        </p>
       </section>
 
       {/* Instant 60-Second Capture Console */}
