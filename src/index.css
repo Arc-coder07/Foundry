@@ -175,3 +175,55 @@ body.light .noise-overlay {
   font-family: "JetBrains Mono", monospace;
   font-weight: 400;
 }
+
+/* ===== Pixel Drift Banner ===== */
+.pixel-drift-banner {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(42, 26, 85, 0.5);
+}
+
+@media (max-width: 767px) {
+  .pixel-drift-banner {
+    height: 280px;
+    border-radius: 16px;
+  }
+}
+
+/* Radial gradient base — exact match from Framer source */
+.pixel-drift-banner__gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 60% 40%,
+    rgb(74, 45, 181) 0%,
+    rgb(26, 10, 69) 45%,
+    rgb(5, 2, 8) 100%
+  );
+}
+
+/* Canvas layer (white pixel dots with noise-driven alpha) */
+.pixel-drift-banner__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Light theme: slightly brighter gradient */
+body.light .pixel-drift-banner {
+  border: 1px solid rgba(42, 26, 85, 0.35);
+}
+
+body.light .pixel-drift-banner__gradient {
+  background: radial-gradient(
+    ellipse at 60% 40%,
+    rgb(90, 55, 200) 0%,
+    rgb(35, 15, 85) 45%,
+    rgb(10, 5, 18) 100%
+  );
+}
