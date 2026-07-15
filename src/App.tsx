@@ -122,18 +122,18 @@ export default function App() {
   const handleCreateItem = async (type: WorkspaceItemType, customInitial?: Partial<WorkspaceItem>) => {
     const defaultData: Partial<WorkspaceItem> = {
       title: customInitial?.title || `Untitled ${type}`,
-      summary: customInitial?.summary || "Describe this thought in one sentence.",
+      summary: customInitial?.summary || "",
       type,
       status: "Captured" as WorkspaceItemStatus,
-      problem: customInitial?.problem || "Problem statements reduce ambiguity. What is the core friction?",
-      proposedSolution: customInitial?.proposedSolution || "How does your proposal solve this? Keep it technical and elegant.",
-      uniqueInsight: customInitial?.uniqueInsight || "What secret do you know that competitors fail to see?",
-      targetAudience: customInitial?.targetAudience || "Who is the primary builder or target user?",
-      validationHypothesis: customInitial?.validationHypothesis || "What test can prove this hypothesis is correct?",
-      mvp: customInitial?.mvp || "[ ] Zero-config node discovery protocol\n[ ] WASM-compatible isolated sandbox",
-      longTermVision: "A global, trustless compute utility...",
-      businessModel: customInitial?.businessModel || "Subscription software or transactional commissions...",
-      technicalChallenges: customInitial?.technicalChallenges || "Ensuring sandbox security within micro-runtimes...",
+      problem: customInitial?.problem || "",
+      proposedSolution: customInitial?.proposedSolution || "",
+      uniqueInsight: customInitial?.uniqueInsight || "",
+      targetAudience: customInitial?.targetAudience || "",
+      validationHypothesis: customInitial?.validationHypothesis || "",
+      mvp: customInitial?.mvp || "",
+      longTermVision: "",
+      businessModel: customInitial?.businessModel || "",
+      technicalChallenges: customInitial?.technicalChallenges || "",
       provenance: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase(),
       source: "BRAINSTORM",
       confidence: "65%",
@@ -341,11 +341,23 @@ export default function App() {
             )}
             
             <div className="flex items-center gap-3">
-              <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
-                {activeItemId && activeItem 
-                  ? `/ WORKSPACE / ${activeItem.type.toUpperCase()} / ${activeItem.title.slice(0, 18).toUpperCase()}...`
-                  : `/ WORKSPACE / ${currentView.toUpperCase()}`
-                }
+              <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                <button onClick={() => { setActiveItemId(null); setView("home"); }} className="hover:text-primary transition-colors cursor-pointer">
+                  / WORKSPACE
+                </button>
+                {activeItemId && activeItem ? (
+                  <>
+                    <button 
+                      onClick={() => { setActiveItemId(null); setView(activeItem.type === "Idea" ? "ideas" : "home"); }} 
+                      className="hover:text-primary transition-colors cursor-pointer"
+                    >
+                      / {activeItem.type.toUpperCase()}
+                    </button>
+                    <span className="text-on-surface">/ {activeItem.title.length > 18 ? activeItem.title.slice(0, 18).toUpperCase() + '...' : activeItem.title.toUpperCase()}</span>
+                  </>
+                ) : (
+                  <span className="text-on-surface">/ {currentView.toUpperCase()}</span>
+                )}
               </span>
               {activeItemId && activeItem && (
                 <span className="px-2 py-0.5 rounded-sm bg-primary/10 border border-primary/20 text-primary font-mono text-[9px] uppercase tracking-wider">
