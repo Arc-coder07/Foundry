@@ -1,0 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght=200..800&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Default: Dark Theme variables */
+  --background-color: #0a0a0a;
+  --on-background-color: #ededed;
+  --surface-color: #0e0e0e;
+  --on-surface-color: #ededed;
+
+  --surface-container-lowest: #050505;
+  --surface-container-low: #0e0e0e;
+  --surface-container: #111111;
+  --surface-container-high: #1f1f1f;
+  --surface-container-highest: #2d2d2d;
+
+  --outline-color: #666666;
+  --outline-variant: #1f1f1f;
+  --text-muted: #a1a1a1;
+
+  --primary-accent: #ffffff;
+  --on-primary-accent: #000000;
+  --secondary-accent: #a1a1a1;
+
+  --on-surface-variant: #a1a1a1;
+  --error-color: #f87171;
+  --error-container: #7f1d1d;
+}
+
+:root.light, html.light, body.light, .light {
+  /* Full Light Theme variables - highly readable, gorgeous and elegant */
+  --background-color: #f7f6f3;
+  --on-background-color: #121110;
+  --surface-color: #fcfbfa;
+  --on-surface-color: #121110;
+
+  --surface-container-lowest: #fcfbfa;
+  --surface-container-low: #f1efeb;
+  --surface-container: #e8e5e0;
+  --surface-container-high: #dedbd5;
+  --surface-container-highest: #d2ceca;
+
+  --outline-color: #8c8883;
+  --outline-variant: #e3dfd8;
+  --text-muted: #454340;
+
+  --primary-accent: #171615;
+  --on-primary-accent: #fcfbfa;
+  --secondary-accent: #454340;
+
+  --on-surface-variant: #454340;
+  --error-color: #ef4444;
+  --error-container: #fee2e2;
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-serif: "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-headline: "Bricolage Grotesque", sans-serif;
+
+  --color-primary: var(--primary-accent);
+  --color-on-primary: var(--on-primary-accent);
+  --color-primary-container: var(--surface-container);
+  --color-on-primary-container: var(--on-surface-color);
+  --color-inverse-primary: var(--background-color);
+
+  --color-secondary: var(--secondary-accent);
+  --color-on-secondary: var(--background-color);
+  --color-secondary-container: var(--surface-container-low);
+  --color-on-secondary-container: var(--on-surface-color);
+
+  --color-background: var(--background-color);
+  --color-on-background: var(--on-background-color);
+
+  --color-surface: var(--surface-color);
+  --color-on-surface: var(--on-surface-color);
+  --color-surface-dim: var(--background-color);
+  --color-surface-bright: var(--surface-container-high);
+
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-error: var(--error-color);
+  --color-error-container: var(--error-container);
+
+  --color-outline: var(--outline-color);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-matrix-green: #22c55e;
+  --color-glow-amber: #e2a356;
+  --color-glow-dawn: #ff7a3d;
+  --color-slate-deep: var(--background-color);
+  --color-charcoal-muted: var(--surface-container-low);
+  --color-border-glass: var(--outline-variant);
+  --color-text-muted: var(--text-muted);
+}
+
+@layer base {
+  body {
+    background-color: var(--background-color);
+    color: var(--on-background-color);
+    font-family: "Plus Jakarta Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--outline-variant);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--outline-color);
+  }
+}
+
+.glass {
+  background: var(--surface-color);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--outline-variant);
+}
+
+.glow-accent-subtle {
+  box-shadow: 0 0 50px -25px var(--outline-color);
+}
+
+.noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.015;
+  z-index: 50;
+  background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBJ0BS06OIHy_KJK8WolxxSQ40CduHkGOMABpP_o-VFTsEu0lLsEjFCgyEqmnYev6G2yTzYKcyRQSNIXWW4M5lhFMIxV_UEqYbNriZeEM1CGttSgzfax7NXONMj3_exjZfeo0Qf_ZJUR4YnRIlf8qnr5ZfJhnxOlgwn45z9tvHL0jsBbOL2kdg1GtrllQlqZhAsQRlYAMzfYgHtD41wjx9lxv8C1KSCQAtG4Jlz7VGrMjz9UWIW3VVQqzV11VlI8-oCMCWnY3XhRvE);
+}
+
+body.light .noise-overlay {
+  opacity: 0.008;
+}
+
+/* Typography styles matching user spec */
+.font-headline-md {
+  font-family: "Bricolage Grotesque", sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 300;
+}
+
+.font-display-lg {
+  font-family: "Bricolage Grotesque", sans-serif;
+  letter-spacing: -0.04em;
+  font-weight: 200;
+}
+
+.font-label-caps {
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+}
+
+.font-technical-data {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 400;
+}
