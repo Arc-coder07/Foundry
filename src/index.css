@@ -178,30 +178,24 @@ body.light .noise-overlay {
 
 /* ===== Pixel Drift Banner ===== */
 .pixel-drift-banner {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 360px;
+  height: 100%;
+  border-radius: inherit;
+  z-index: 0;
   overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid rgba(42, 26, 85, 0.5);
 }
 
-@media (max-width: 767px) {
-  .pixel-drift-banner {
-    height: 280px;
-    border-radius: 16px;
-  }
-}
-
-/* Radial gradient base — exact match from Framer source */
+/* Radial gradient base — matches UI theme */
 .pixel-drift-banner__gradient {
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    ellipse at 60% 40%,
-    rgb(74, 45, 181) 0%,
-    rgb(26, 10, 69) 45%,
-    rgb(5, 2, 8) 100%
+    ellipse at 50% 40%,
+    var(--surface-container-high) 0%,
+    var(--surface-container) 45%,
+    var(--background-color) 100%
   );
 }
 
@@ -214,16 +208,21 @@ body.light .noise-overlay {
   pointer-events: none;
 }
 
-/* Light theme: slightly brighter gradient */
+/* Light theme: matches light UI colors and inverts canvas dots */
 body.light .pixel-drift-banner {
-  border: 1px solid rgba(42, 26, 85, 0.35);
+  border: none;
 }
 
 body.light .pixel-drift-banner__gradient {
   background: radial-gradient(
-    ellipse at 60% 40%,
-    rgb(90, 55, 200) 0%,
-    rgb(35, 15, 85) 45%,
-    rgb(10, 5, 18) 100%
+    ellipse at 50% 40%,
+    var(--surface-container) 0%,
+    var(--surface-container-low) 45%,
+    var(--background-color) 100%
   );
+}
+
+body.light .pixel-drift-banner__canvas {
+  filter: invert(1);
+  opacity: 0.8; /* soften the black dots slightly */
 }
