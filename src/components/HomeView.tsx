@@ -13,6 +13,7 @@ import {
   Heart
 } from "lucide-react";
 import { WorkspaceItem } from "../types";
+import { PixelDriftBanner } from "./HalftoneGlowBanner";
 
 interface HomeViewProps {
   items: WorkspaceItem[];
@@ -59,49 +60,13 @@ export function HomeView({
     setShowQuickAdd(false);
   };
 
-  // Pre-configured templates to start thinking immediately
-  const templates = [
-    {
-      name: "AI Copresent Agent Mesh",
-      type: "Idea" as const,
-      category: "AI",
-      data: {
-        title: "Autonomous Agent Router for heterogeneous model coordination.",
-        summary: "An API proxy dynamically routing agent tasks based on latency, model cost, and reasoning depth.",
-        problem: "As developers orchestrate multiple fine-tuned models (Gemini, Claude, custom embeddings), coordinating consensus and routing queries introduces extreme latency and fragile multi-turn handoffs.",
-        uniqueInsight: "A stateful router can predict correct routing paths by inspecting query semantics in under 12ms, reducing operational overhead by 40% and avoiding pro-tier invocation costs.",
-        tags: ["ROUTER", "AGENT", "ORCHESTRATION"]
-      }
-    },
-    {
-      name: "Distributed Memory DB",
-      type: "Architecture" as const,
-      category: "Infrastructure",
-      data: {
-        title: "Key-Value State Cache utilizing persistent memory pooling.",
-        summary: "A pure Rust LSM state manager with shared replication capabilities.",
-        problem: "Standard database caches lose write states during transient connection dropouts, while traditional distributed locks halt transaction speeds.",
-        uniqueInsight: "Merging write-ahead logs with decentralized clock vectors lets local nodes safely queue writes during split-brain scenarios.",
-        tags: ["RUST", "DATABASE", "DISTRIBUTED"]
-      }
-    },
-    {
-      name: "Web3 Micro-Billing protocol",
-      type: "Experiment" as const,
-      category: "Fintech",
-      data: {
-        title: "Sub-cent latency billing logs for edge leases.",
-        summary: "A cryptographic token billing channel optimized for nano-payment streaming.",
-        problem: "Centralized credit cards charge 30c flat processing fees, making 0.01c API leases mathematically impossible to process.",
-        uniqueInsight: "Stateless payment validation allows node-to-node ledger validation to occur asynchronously once per epoch rather than transactionally.",
-        tags: ["BILLING", "LEDGER", "CRYPTOGRAPHY"]
-      }
-    }
-  ];
 
   return (
     <div className="max-w-[900px] mx-auto py-16 px-4 space-y-20 md:space-y-24">
       
+      {/* Pixel Drift Banner */}
+      <PixelDriftBanner />
+
       {/* Centered Editorial Header */}
       <section className="text-center space-y-6 pt-6">
         <div className="flex justify-center mb-2">
@@ -248,37 +213,7 @@ export function HomeView({
         )}
       </section>
 
-      {/* Thought Starter Blueprints (Templates) */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-2.5 border-b border-outline-variant pb-3">
-          <BookOpen className="w-4 h-4 text-on-surface opacity-60" />
-          <h2 className="font-label-caps text-xs text-on-surface uppercase tracking-widest font-semibold">Thought Blueprints</h2>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {templates.map(tpl => (
-            <div 
-              key={tpl.name}
-              onClick={() => onCreateItem(tpl.type, tpl.data)}
-              className="p-5 bg-surface-container-low border border-outline-variant hover:bg-surface-container hover:border-primary/30 rounded-xl cursor-pointer transition-all flex flex-col justify-between h-[145px] group"
-            >
-              <div>
-                <p className="text-[9px] font-mono text-text-muted uppercase tracking-widest mb-1.5">{tpl.category}</p>
-                <h5 className="text-xs font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">
-                  {tpl.name}
-                </h5>
-                <p className="text-[11px] text-text-muted line-clamp-2 leading-relaxed mt-1">
-                  {tpl.data.summary}
-                </p>
-              </div>
-              <span className="text-[9px] font-mono text-text-muted uppercase group-hover:text-on-surface transition-colors mt-2.5 flex items-center gap-1.5 font-semibold">
-                <span>Instantiate Blueprint</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
 
     </div>
   );
