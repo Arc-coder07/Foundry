@@ -201,12 +201,18 @@ export function Editor({
         {/* One Sentence Summary */}
         <section className="p-6 bg-surface-container-low border border-outline-variant rounded-xl shadow-sm">
           <div className="text-[10px] font-mono tracking-widest text-on-surface uppercase mb-2.5 font-bold">One-Sentence Summary</div>
-          <input
-            type="text"
+          <textarea
+            ref={(el) => {
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = `${el.scrollHeight}px`;
+              }
+            }}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             onBlur={() => triggerUpdate({ summary })}
-            className="w-full bg-transparent border-none text-on-surface text-sm md:text-base outline-none font-medium placeholder-on-surface-variant/30 leading-relaxed"
+            rows={1}
+            className="w-full bg-transparent border-none text-on-surface text-sm md:text-base outline-none font-medium placeholder-on-surface-variant/30 leading-relaxed resize-none overflow-hidden"
             placeholder="Describe what this is in a single elegant, high-impact sentence..."
           />
         </section>

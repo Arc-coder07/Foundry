@@ -115,12 +115,18 @@ export function HomeView({
 
             <div className="space-y-2">
               <label className="text-[10px] font-label-caps text-text-muted uppercase tracking-wider font-semibold">One-Sentence Summary</label>
-              <input
-                type="text"
+              <textarea
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    el.style.height = `${el.scrollHeight}px`;
+                  }
+                }}
                 value={qSummary}
                 onChange={(e) => setQSummary(e.target.value)}
+                rows={1}
                 placeholder="An API proxy routing task vectors dynamically..."
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors"
+                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors resize-none overflow-hidden"
               />
             </div>
 
