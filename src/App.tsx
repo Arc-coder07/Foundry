@@ -144,6 +144,8 @@ export default function App() {
       collection: customInitial?.collection || "AI",
       pinned: false,
       relatedIds: [],
+      attachments: [],
+      moodboard: [],
     };
 
     setIsSyncing(true);
