@@ -3,7 +3,8 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
-import { WorkspaceItem, TimelineEntry, DecisionEntry } from "./src/types";
+import multer from "multer";
+import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard } from "./src/types";
 
 // Initialize Gemini SDK safely
 const apiKey = process.env.GEMINI_API_KEY;
@@ -24,6 +25,63 @@ app.use(express.json());
 // Path to persist JSON database
 const DB_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DB_DIR, "db.json");
+const ATTACHMENTS_DIR = path.join(DB_DIR, "attachments");
+const MOODBOARD_DIR = path.join(DB_DIR, "moodboard");
+
+// Ensure upload directories exist
+[ATTACHMENTS_DIR, MOODBOARD_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+// Multer config for attachments (md/pdf, max 10MB)
+const attachmentStorage = multer.diskStorage({
+  destination: (req, _file, cb) => {
+    const itemDir = path.join(ATTACHMENTS_DIR, req.params.id);
+    if (!fs.existsSync(itemDir)) fs.mkdirSync(itemDir, { recursive: true });
+    cb(null, itemDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    cb(null, uniqueName);
+  }
+});
+const uploadAttachment = multer({
+  storage: attachmentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (['.md', '.pdf'].includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only .md and .pdf files are allowed'));
+    }
+  }
+});
+
+// Multer config for moodboard images (common image types, max 10MB)
+const moodboardStorage = multer.diskStorage({
+  destination: (req, _file, cb) => {
+    const itemDir = path.join(MOODBOARD_DIR, req.params.id);
+    if (!fs.existsSync(itemDir)) fs.mkdirSync(itemDir, { recursive: true });
+    cb(null, itemDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    cb(null, uniqueName);
+  }
+});
+const uploadMoodboardImage = multer({
+  storage: moodboardStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 // Setup default Seed Data
 const seedData: WorkspaceItem[] = [];
@@ -90,7 +148,9 @@ app.post("/api/items", (req, res) => {
         summary: "Initial thoughts captured into Foundry."
       }
     ],
-    decisions: req.body.decisions || []
+    decisions: req.body.decisions || [],
+    attachments: req.body.attachments || [],
+    moodboard: req.body.moodboard || []
   };
   
   data.push(newItem);
@@ -124,6 +184,145 @@ app.delete("/api/items/:id", (req, res) => {
   } else {
     res.status(404).json({ error: "Item not found" });
   }
+});
+
+// ======= ATTACHMENT ENDPOINTS =======
+
+// Upload attachment (md/pdf)
+app.post("/api/items/:id/attachments", uploadAttachment.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const data = readDatabase();
+  const index = data.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+  const ext = path.extname(req.file.originalname).toLowerCase().replace('.', '') as 'md' | 'pdf';
+  const attachment: AttachmentEntry = {
+    id: `att-${Date.now()}`,
+    filename: req.file.filename,
+    originalName: req.file.originalname,
+    type: ext,
+    note: (req.body.note as string) || '',
+    uploadedAt: new Date().toISOString()
+  };
+
+  if (!data[index].attachments) data[index].attachments = [];
+  data[index].attachments.push(attachment);
+  data[index].updatedAt = new Date().toISOString();
+  writeDatabase(data);
+  res.status(201).json(attachment);
+});
+
+// Serve attachment file
+app.get("/api/attachments/:itemId/:filename", (req, res) => {
+  const filePath = path.join(ATTACHMENTS_DIR, req.params.itemId, req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+  res.sendFile(filePath);
+});
+
+// Delete attachment
+app.delete("/api/items/:id/attachments/:attachmentId", (req, res) => {
+  const data = readDatabase();
+  const index = data.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+  const attachment = (data[index].attachments || []).find(a => a.id === req.params.attachmentId);
+  if (!attachment) return res.status(404).json({ error: 'Attachment not found' });
+
+  // Remove file from disk
+  const filePath = path.join(ATTACHMENTS_DIR, req.params.id, attachment.filename);
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+  data[index].attachments = (data[index].attachments || []).filter(a => a.id !== req.params.attachmentId);
+  data[index].updatedAt = new Date().toISOString();
+  writeDatabase(data);
+  res.json({ success: true });
+});
+
+// Update attachment note
+app.put("/api/items/:id/attachments/:attachmentId", (req, res) => {
+  const data = readDatabase();
+  const index = data.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+  const attIndex = (data[index].attachments || []).findIndex(a => a.id === req.params.attachmentId);
+  if (attIndex === -1) return res.status(404).json({ error: 'Attachment not found' });
+
+  data[index].attachments[attIndex].note = req.body.note || '';
+  data[index].updatedAt = new Date().toISOString();
+  writeDatabase(data);
+  res.json(data[index].attachments[attIndex]);
+});
+
+// ======= MOODBOARD ENDPOINTS =======
+
+// Add moodboard card (with optional image upload)
+app.post("/api/items/:id/moodboard", uploadMoodboardImage.single('image'), (req, res) => {
+  const data = readDatabase();
+  const index = data.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+  const cardType = (req.body.type || 'note') as 'image' | 'note' | 'link';
+  const card: MoodboardCard = {
+    id: `mood-${Date.now()}`,
+    type: cardType,
+    content: req.body.content || '',
+    caption: req.body.caption || '',
+    imageFilename: req.file ? req.file.filename : undefined,
+    url: req.body.url || undefined,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!data[index].moodboard) data[index].moodboard = [];
+  data[index].moodboard.push(card);
+  data[index].updatedAt = new Date().toISOString();
+  writeDatabase(data);
+  res.status(201).json(card);
+});
+
+// Serve moodboard image
+app.get("/api/moodboard/:itemId/:filename", (req, res) => {
+  const filePath = path.join(MOODBOARD_DIR, req.params.itemId, req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+  res.sendFile(filePath);
+});
+
+// Update moodboard card
+app.put("/api/items/:id/moodboard/:cardId", (req, res) => {
+  const data = readDatabase();
+  const index = data.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+  const cardIndex = (data[index].moodboard || []).findIndex(c => c.id === req.params.cardId);
+  if (cardIndex === -1) return res.status(404).json({ error: 'Card not found' });
+
+  const card = data[index].moodboard[cardIndex];
+  if (req.body.content !== undefined) card.content = req.body.content;
+  if (req.body.caption !== undefined) card.caption = req.body.caption;
+  if (req.body.url !== undefined) card.url = req.body.url;
+  data[index].updatedAt = new Date().toISOString();
+  writeDatabase(data);
+  res.json(card);
+});
+
+// Delete moodboard card
+app.delete("/api/items/:id/moodboard/:cardId", (req, res) => {
+  const data = readDatabase();
+  const index = data.findIndex(i => i.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+  const card = (data[index].moodboard || []).find(c => c.id === req.params.cardId);
+  if (!card) return res.status(404).json({ error: 'Card not found' });
+
+  // Remove uploaded image from disk if exists
+  if (card.imageFilename) {
+    const filePath = path.join(MOODBOARD_DIR, req.params.id, card.imageFilename);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+
+  data[index].moodboard = (data[index].moodboard || []).filter(c => c.id !== req.params.cardId);
+  data[index].updatedAt = new Date().toISOString();
+  writeDatabase(data);
+  res.json({ success: true });
 });
 
 // Co-Pilot AI Assist Endpoint
