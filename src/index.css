@@ -226,3 +226,105 @@ body.light .pixel-drift-banner__canvas {
   filter: invert(1);
   opacity: 0.8; /* soften the black dots slightly */
 }
+
+/* ===== Moodboard Masonry Grid ===== */
+.moodboard-grid {
+  columns: 3;
+  column-gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .moodboard-grid {
+    columns: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .moodboard-grid {
+    columns: 1;
+  }
+}
+
+.moodboard-card {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.moodboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3);
+}
+
+/* Image Card */
+.moodboard-card-image {
+  padding: 8px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+}
+
+.moodboard-card-image img {
+  border-radius: 8px;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.moodboard-card-image:hover {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 20px -8px var(--primary-accent);
+}
+
+/* Note Card */
+.moodboard-card-note {
+  padding: 16px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-left: 3px solid var(--primary-accent);
+  border-radius: 12px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.moodboard-card-note::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 23px,
+    var(--outline-variant) 23px,
+    var(--outline-variant) 24px
+  );
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Link Card */
+.moodboard-card-link {
+  padding: 14px 16px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+}
+
+.moodboard-card-link:hover {
+  border-color: var(--primary-accent);
+}
+
+/* ===== Attachment Drop Zone ===== */
+.attachment-dropzone {
+  transition: all 0.2s ease;
+}
+
+.attachment-dropzone:hover {
+  transform: scale(1.01);
+}
+
