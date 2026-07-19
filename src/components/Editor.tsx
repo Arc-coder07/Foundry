@@ -11,9 +11,13 @@ import {
   Share2,
   FolderMinus,
   Sparkles,
-  Link as LinkIcon
+  Link as LinkIcon,
+  PenTool,
+  Palette
 } from "lucide-react";
-import { WorkspaceItem, TimelineEntry, DecisionEntry } from "../types";
+import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard } from "../types";
+import { AttachmentsPanel } from "./AttachmentsPanel";
+import { MoodboardView } from "./MoodboardView";
 
 interface EditorProps {
   item: WorkspaceItem;
@@ -45,6 +49,9 @@ export function Editor({
   // Link item selector
   const [selectedLinkItemId, setSelectedLinkItemId] = useState("");
 
+  // Editor tab state: 'canvas' (default editor) or 'moodboard'
+  const [editorTab, setEditorTab] = useState<'canvas' | 'moodboard'>('canvas');
+
   // Sync state with item when item changes
   useEffect(() => {
     setTitle(item.title);
@@ -53,6 +60,7 @@ export function Editor({
     setSolution(item.proposedSolution || "");
     setUniqueInsight(item.uniqueInsight || "");
     setSelectedLinkItemId("");
+    setEditorTab('canvas');
   }, [item.id]);
 
   // Debounced/Triggered Updates
@@ -173,8 +181,80 @@ export function Editor({
   const parsedMvpList = parseMvpItems();
   const selectableLinkItems = allItems.filter(i => i.id !== item.id && !(item.relatedIds || []).includes(i.id));
 
+  // Attachment callbacks
+  const handleAttachmentAdded = (attachment: AttachmentEntry) => {
+    const updated = { ...item, attachments: [...(item.attachments || []), attachment] };
+    onUpdate(updated);
+  };
+  const handleAttachmentDeleted = (attachmentId: string) => {
+    const updated = { ...item, attachments: (item.attachments || []).filter(a => a.id !== attachmentId) };
+    onUpdate(updated);
+  };
+  const handleAttachmentNoteUpdated = (attachmentId: string, note: string) => {
+    const updated = { ...item, attachments: (item.attachments || []).map(a => a.id === attachmentId ? { ...a, note } : a) };
+    onUpdate(updated);
+  };
+
+  // Moodboard callbacks
+  const handleMoodboardCardAdded = (card: MoodboardCard) => {
+    const updated = { ...item, moodboard: [...(item.moodboard || []), card] };
+    onUpdate(updated);
+  };
+  const handleMoodboardCardUpdated = (card: MoodboardCard) => {
+    const updated = { ...item, moodboard: (item.moodboard || []).map(c => c.id === card.id ? card : c) };
+    onUpdate(updated);
+  };
+  const handleMoodboardCardDeleted = (cardId: string) => {
+    const updated = { ...item, moodboard: (item.moodboard || []).filter(c => c.id !== cardId) };
+    onUpdate(updated);
+  };
+
   return (
-    <div className="max-w-[1150px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 mt-6 select-text pb-24">
+    <div className="max-w-[1150px] mx-auto select-text pb-24">
+
+      {/* Tab Bar */}
+      <div className="flex items-center gap-1 mb-8 border-b border-outline-variant/20 pb-0">
+        <button
+          onClick={() => setEditorTab('canvas')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border-b-2 -mb-px ${
+            editorTab === 'canvas'
+              ? 'text-primary border-primary'
+              : 'text-text-muted border-transparent hover:text-on-surface hover:border-outline-variant/40'
+          }`}
+        >
+          <PenTool className="w-3.5 h-3.5" />
+          Canvas
+        </button>
+        <button
+          onClick={() => setEditorTab('moodboard')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border-b-2 -mb-px ${
+            editorTab === 'moodboard'
+              ? 'text-primary border-primary'
+              : 'text-text-muted border-transparent hover:text-on-surface hover:border-outline-variant/40'
+          }`}
+        >
+          <Palette className="w-3.5 h-3.5" />
+          Moodboard
+          {(item.moodboard || []).length > 0 && (
+            <span className="text-[9px] font-mono text-text-muted bg-surface-container border border-outline-variant px-1.5 py-0.5 rounded">
+              {(item.moodboard || []).length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Moodboard Tab */}
+      {editorTab === 'moodboard' ? (
+        <MoodboardView
+          item={item}
+          onCardAdded={handleMoodboardCardAdded}
+          onCardUpdated={handleMoodboardCardUpdated}
+          onCardDeleted={handleMoodboardCardDeleted}
+        />
+      ) : (
+
+      /* Canvas Tab — original editor layout */
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mt-0">
       
       {/* Left Columns (Active Workspace Thought Canvas) */}
       <div className="lg:col-span-8 space-y-12">
@@ -759,7 +839,17 @@ export function Editor({
           </form>
         </div>
 
+        {/* Attachments Panel */}
+        <AttachmentsPanel
+          item={item}
+          onAttachmentAdded={handleAttachmentAdded}
+          onAttachmentDeleted={handleAttachmentDeleted}
+          onAttachmentNoteUpdated={handleAttachmentNoteUpdated}
+        />
+
       </aside>
+    </div>
+    )}
     </div>
   );
 }
