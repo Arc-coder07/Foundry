@@ -17,6 +17,25 @@ export interface DecisionEntry {
   content: string;
 }
 
+export interface AttachmentEntry {
+  id: string;
+  filename: string;       // stored filename on disk
+  originalName: string;   // user-facing filename
+  type: 'md' | 'pdf';
+  note: string;
+  uploadedAt: string;
+}
+
+export interface MoodboardCard {
+  id: string;
+  type: 'image' | 'note' | 'link';
+  content: string;        // note text, or link URL, or empty for images
+  caption: string;
+  imageFilename?: string; // stored filename for uploaded images
+  url?: string;           // external URL for link cards
+  createdAt: string;
+}
+
 export interface WorkspaceItem {
   id: string;
   type: WorkspaceItemType;
@@ -54,6 +73,10 @@ export interface WorkspaceItem {
   relatedIds: string[];
   timeline: TimelineEntry[];
   decisions: DecisionEntry[];
+  
+  // Attachments & Moodboard
+  attachments: AttachmentEntry[];
+  moodboard: MoodboardCard[];
 }
 
 export interface AISuggestionResponse {
