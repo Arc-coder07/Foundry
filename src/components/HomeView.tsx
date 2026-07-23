@@ -78,7 +78,7 @@ export function HomeView({
           <h1 className="font-display text-4xl md:text-[56px] text-on-surface leading-[1.1] tracking-tight font-medium max-w-2xl mx-auto drop-shadow-sm">
             "I want to think <span className="italic font-serif opacity-50">here</span>."
           </h1>
-          <p className="text-sm md:text-base text-text-muted max-w-xl mx-auto leading-relaxed drop-shadow-sm">
+          <p className="text-sm md:text-base text-on-surface/90 max-w-xl mx-auto leading-relaxed drop-shadow-sm">
             Foundry is the first place you visit whenever an idea is born. Overcome ambiguity, audit technical assumptions, and orchestrate buildable products.
           </p>
         </div>
