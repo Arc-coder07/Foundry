@@ -13,7 +13,6 @@ import {
   Heart
 } from "lucide-react";
 import { WorkspaceItem } from "../types";
-import { PixelDriftBanner } from "./HalftoneGlowBanner";
 
 interface HomeViewProps {
   items: WorkspaceItem[];
@@ -64,12 +63,9 @@ export function HomeView({
   return (
     <div className="max-w-[900px] mx-auto py-16 px-4 space-y-20 md:space-y-24">
       
-      {/* Hero Section with Pixel Drift Banner Background */}
-      <section className="relative rounded-2xl border border-outline-variant shadow-2xl overflow-hidden">
-        <PixelDriftBanner />
-
-        {/* Content overlaid on banner */}
-        <div className="relative z-10 text-center space-y-6 py-20 px-4 md:py-28 md:px-8 bg-gradient-to-b from-transparent to-background/20">
+      {/* Hero Section */}
+      <section className="relative rounded-2xl border border-outline-variant shadow-2xl overflow-hidden bg-gradient-to-b from-surface-container-low to-background">
+        <div className="relative z-10 text-center space-y-6 py-20 px-4 md:py-28 md:px-8">
           <div className="flex justify-center mb-2">
             <span className="px-3.5 py-1.5 rounded-full bg-surface-container/60 backdrop-blur-md border border-outline-variant text-text-muted font-mono text-[9px] tracking-widest uppercase">
               Product Thinking Operating System
