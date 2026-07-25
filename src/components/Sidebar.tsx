@@ -8,7 +8,8 @@ import {
   Moon, 
   Command,
   Compass,
-  Zap
+  Zap,
+  BarChart3
 } from "lucide-react";
 import { WorkspaceItem, UserProfile } from "../types";
 
@@ -154,6 +155,20 @@ export function Sidebar({
               {pinnedCount}
             </span>
           )}
+        </button>
+
+        <button 
+          onClick={() => setView("forge-timeline")}
+          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
+            currentView === "forge-timeline" 
+              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
+              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
+          }`}
+        >
+          <span className="flex items-center gap-3">
+            <BarChart3 className="w-4 h-4" />
+            <span>Forge Timeline</span>
+          </span>
         </button>
 
         <div className="h-px bg-outline-variant my-5 mx-2"></div>
