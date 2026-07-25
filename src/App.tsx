@@ -19,7 +19,8 @@ import { CoPilotDrawer } from "./components/CoPilotDrawer";
 import { Editor } from "./components/Editor";
 import { HomeView } from "./components/HomeView";
 import { ProfileView } from "./components/ProfileView";
-import { WorkspaceItem, WorkspaceItemType, WorkspaceItemStatus, UserProfile } from "./types";
+import ForgeTimeline from "./components/ForgeTimeline";
+import { WorkspaceItem, WorkspaceItemType, WorkspaceItemStatus, UserProfile, Milestone } from "./types";
 
 export default function App() {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
@@ -63,9 +64,13 @@ export default function App() {
     localStorage.setItem("foundry-profile", JSON.stringify(profile));
   };
 
-  // Load items on mount
+  // Milestone state
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+
+  // Load items and milestones on mount
   useEffect(() => {
     fetchItems();
+    fetchMilestones();
     
     // Apply persisted theme on mount
     const saved = localStorage.getItem("foundry-theme");
@@ -84,6 +89,56 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setApiError("Database connection failed. Operating in offline state.");
+    }
+  };
+
+  const fetchMilestones = async () => {
+    try {
+      const res = await fetch("/api/milestones");
+      if (res.ok) {
+        const data = await res.json();
+        setMilestones(data);
+      }
+    } catch (err) {
+      console.error("Failed to load milestones:", err);
+    }
+  };
+
+  const handleCreateMilestone = async (milestone: Omit<Milestone, 'id'>) => {
+    try {
+      const res = await fetch("/api/milestones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(milestone)
+      });
+      if (res.ok) {
+        const created: Milestone = await res.json();
+        setMilestones(prev => [...prev, created]);
+      }
+    } catch (err) {
+      console.error("Failed to create milestone:", err);
+    }
+  };
+
+  const handleUpdateMilestone = async (milestone: Milestone) => {
+    setMilestones(prev => prev.map(m => m.id === milestone.id ? milestone : m));
+    try {
+      await fetch(`/api/milestones/${milestone.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(milestone)
+      });
+    } catch (err) {
+      console.error("Failed to update milestone:", err);
+    }
+  };
+
+  const handleDeleteMilestone = async (id: string) => {
+    setMilestones(prev => prev.filter(m => m.id !== id));
+    try {
+      await fetch(`/api/milestones/${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.error("Failed to delete milestone:", err);
     }
   };
 
@@ -415,12 +470,25 @@ export default function App() {
               onSwitchItem={(id) => setActiveItemId(id)}
               isSyncing={isSyncing}
             />
-          ) : currentView === "profile" ? (
+           ) : currentView === "profile" ? (
             /* PROFILE VIEW */
             <ProfileView
               profile={userProfile}
               onUpdateProfile={handleUpdateProfile}
               onBack={() => setView("home")}
+            />
+          ) : currentView === "forge-timeline" ? (
+            /* FORGE TIMELINE VIEW */
+            <ForgeTimeline
+              items={items}
+              milestones={milestones}
+              onSelectItem={(id) => {
+                setActiveItemId(id);
+                setView("workspace");
+              }}
+              onCreateMilestone={handleCreateMilestone}
+              onUpdateMilestone={handleUpdateMilestone}
+              onDeleteMilestone={handleDeleteMilestone}
             />
           ) : currentView === "home" ? (
             /* LANDING STARTING SCREEN */
