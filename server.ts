@@ -4,7 +4,7 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import multer from "multer";
-import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard } from "./src/types";
+import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard, Milestone } from "./src/types";
 
 // Initialize Gemini SDK safely
 const apiKey = process.env.GEMINI_API_KEY;
@@ -113,6 +113,38 @@ function writeDatabase(data: WorkspaceItem[]) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (error) {
     console.error("Failed to write database to disk:", error);
+  }
+}
+
+const MILESTONE_FILE = path.join(DB_DIR, "milestones.json");
+
+// Read Milestones DB
+function readMilestones(): Milestone[] {
+  try {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(MILESTONE_FILE)) {
+      fs.writeFileSync(MILESTONE_FILE, JSON.stringify([], null, 2), "utf-8");
+      return [];
+    }
+    const raw = fs.readFileSync(MILESTONE_FILE, "utf-8");
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error("Failed to read milestones database:", error);
+    return [];
+  }
+}
+
+// Write Milestones DB
+function writeMilestones(data: Milestone[]) {
+  try {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+    fs.writeFileSync(MILESTONE_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (error) {
+    console.error("Failed to write milestones database to disk:", error);
   }
 }
 
@@ -323,6 +355,158 @@ app.delete("/api/items/:id/moodboard/:cardId", (req, res) => {
   data[index].updatedAt = new Date().toISOString();
   writeDatabase(data);
   res.json({ success: true });
+});
+
+// ======= MILESTONE ENDPOINTS =======
+
+app.get("/api/milestones", (req, res) => {
+  const data = readMilestones();
+  const month = req.query.month as string;
+  if (month) {
+    const filtered = data.filter(m => m.date.startsWith(month));
+    return res.json(filtered);
+  }
+  res.json(data);
+});
+
+app.post("/api/milestones", (req, res) => {
+  const data = readMilestones();
+  const newMilestone: Milestone = {
+    ...req.body,
+    id: `ms-${Date.now()}`
+  };
+  data.push(newMilestone);
+  writeMilestones(data);
+  res.status(201).json(newMilestone);
+});
+
+app.put("/api/milestones/:id", (req, res) => {
+  const data = readMilestones();
+  const index = data.findIndex(m => m.id === req.params.id);
+  if (index !== -1) {
+    const updated = { ...data[index], ...req.body };
+    data[index] = updated;
+    writeMilestones(data);
+    res.json(updated);
+  } else {
+    res.status(404).json({ error: "Milestone not found" });
+  }
+});
+
+app.delete("/api/milestones/:id", (req, res) => {
+  const data = readMilestones();
+  const filtered = data.filter(m => m.id !== req.params.id);
+  if (filtered.length !== data.length) {
+    writeMilestones(filtered);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: "Milestone not found" });
+  }
+});
+
+// ======= STATS ENDPOINT =======
+
+app.get("/api/stats", (req, res) => {
+  const data = readDatabase();
+  
+  const totalItems = data.length;
+  const activeItems = data.filter(i => !['Archived', 'Released'].includes(i.status)).length;
+  
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const thisWeekCount = data.filter(i => new Date(i.createdAt) >= oneWeekAgo).length;
+  
+  const confidences = data.map(i => parseInt(i.confidence)).filter(c => !isNaN(c));
+  const avgConfidence = confidences.length ? Math.round(confidences.reduce((a, b) => a + b, 0) / confidences.length) : 0;
+  
+  const statuses = ['Captured', 'Expanded', 'Validated', 'Planning', 'Building', 'Released'];
+  const statusDistribution = statuses.reduce((acc, status) => {
+    acc[status] = 0;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  data.forEach(item => {
+    if (statusDistribution[item.status] !== undefined) {
+      statusDistribution[item.status]++;
+    } else if (item.status !== 'Archived') {
+      statusDistribution[item.status] = 1;
+    }
+  });
+  
+  const staleItems = data.filter(i => new Date(i.updatedAt) < oneWeekAgo);
+  
+  // Activity Log (last 84 days)
+  const activityLogMap: Record<string, number> = {};
+  const eightyFourDaysAgo = new Date();
+  eightyFourDaysAgo.setDate(eightyFourDaysAgo.getDate() - 84);
+  
+  data.forEach(item => {
+    const createdDate = item.createdAt.split('T')[0];
+    const updatedDate = item.updatedAt.split('T')[0];
+    
+    if (new Date(createdDate) >= eightyFourDaysAgo) {
+      activityLogMap[createdDate] = (activityLogMap[createdDate] || 0) + 1;
+    }
+    if (updatedDate !== createdDate && new Date(updatedDate) >= eightyFourDaysAgo) {
+      activityLogMap[updatedDate] = (activityLogMap[updatedDate] || 0) + 1;
+    }
+  });
+  
+  const activityLog = Object.entries(activityLogMap)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+    
+  // Streak calculations
+  const activeDates = new Set(activityLog.map(log => log.date));
+  let currentStreak = 0;
+  let longestStreak = 0;
+  
+  const today = new Date().toISOString().split('T')[0];
+  let checkDate = new Date();
+  
+  while (true) {
+    const dateStr = checkDate.toISOString().split('T')[0];
+    if (activeDates.has(dateStr)) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else if (dateStr === today) {
+      // It's today, allow it to be 0 for today but keep checking yesterday
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  
+  const sortedActiveDates = Array.from(activeDates).sort();
+  if (sortedActiveDates.length > 0) {
+    let tempStreak = 1;
+    longestStreak = 1;
+    for (let i = 1; i < sortedActiveDates.length; i++) {
+      const prev = new Date(sortedActiveDates[i - 1]);
+      const curr = new Date(sortedActiveDates[i]);
+      const diffTime = Math.abs(curr.getTime() - prev.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 1;
+      }
+    }
+  }
+  
+  res.json({
+    totalItems,
+    activeItems,
+    thisWeekCount,
+    avgConfidence,
+    statusDistribution,
+    staleItems,
+    activityLog,
+    currentStreak,
+    longestStreak
+  });
 });
 
 // Co-Pilot AI Assist Endpoint

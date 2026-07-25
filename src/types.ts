@@ -90,3 +90,13 @@ export interface UserProfile {
   bio: string;
   avatarUrl: string;
 }
+
+export interface Milestone {
+  id: string;
+  title: string;
+  date: string; // ISO date string (YYYY-MM-DD)
+  itemId?: string; // optional link to a workspace item
+  type: 'deadline' | 'review' | 'launch' | 'custom';
+  completed: boolean;
+  note: string;
+}
