@@ -297,6 +297,28 @@ export default function App() {
     }
   };
 
+  // Trigger Antigravity Agent
+  const handleTriggerAgent = async () => {
+    if (!activeItemId) return;
+    try {
+      const res = await fetch("/api/antigravity/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: activeItemId, prompt: "Please research this idea and perform a SWOT analysis." })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        alert("Antigravity Agent started in the background! A markdown report will be attached to this item when it finishes.");
+      } else {
+        throw new Error(data.error || "Failed to start agent");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Communication failure with agent service.");
+    }
+  };
+
   // Custom Co-pilot apply optimization trigger
   const handleApplyCoPilotImprovement = (improvedText: string) => {
     if (!activeItemId) return;
@@ -621,6 +643,15 @@ export default function App() {
                 title="Suggest MVP limits, technical blocks, roadmaps, complexity scoring"
               >
                 <span>EXPAND</span>
+              </button>
+
+              <button 
+                onClick={handleTriggerAgent}
+                className="px-3.5 py-1.5 bg-primary/10 hover:bg-primary/20 rounded-full transition-all text-primary font-label-caps text-[10px] flex items-center gap-2 cursor-pointer font-bold border border-primary/20"
+                title="Run an autonomous Antigravity agent to research and perform SWOT analysis"
+              >
+                <Zap className="w-3 h-3" />
+                <span>AGENT</span>
               </button>
             </div>
             
