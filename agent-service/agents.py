@@ -50,9 +50,22 @@ Please perform the following steps:
 2. Search for the actual market size and relevant market trends.
 3. Perform an advanced SWOT analysis (Strengths, Weaknesses, Opportunities, Threats) based on your findings.
 4. Output a comprehensive Markdown report of your findings. DO NOT include any preamble, only the markdown report. Use headings (###) to separate sections.
+5. If a tool fails (e.g. rate limit or quota exceeded), gracefully note the limitation in your report and continue. DO NOT output raw error strings like "GenerateContent failed".
+6. Use Mermaid.js (```mermaid) syntax to generate beautiful diagrams for market mapping or architecture whenever possible. Use Markdown Tables for competitor feature comparisons.
 """
     
-    async with Agent(config) as agent:
-        response = await agent.chat(agent_prompt)
-        content = await response.text()
-        return content
+    try:
+        async with Agent(config) as agent:
+            response = await agent.chat(agent_prompt)
+            content = await response.text()
+            
+            # Fetch token usage for observability
+            usage = agent.conversation.total_usage
+            if usage:
+                token_report = f"\n\n---\n### 📊 AI Compute Metrics\n- **Prompt Tokens**: `{usage.prompt_token_count}`\n- **Candidate Tokens**: `{usage.candidates_token_count}`\n- **Reasoning Tokens**: `{usage.thoughts_token_count}`\n- **Total Session Tokens**: `{usage.total_token_count}`\n"
+                content += token_report
+                
+            return content
+    except Exception as e:
+        logger.error(f"Agent execution failed: {e}")
+        return f"### Research Failed\n\nThe agent encountered an unexpected error:\n```\n{e}\n```\nPlease ensure your API limits are sufficient and try again."

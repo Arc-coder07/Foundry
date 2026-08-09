@@ -75,8 +75,10 @@ export interface WorkspaceItem {
   decisions: DecisionEntry[];
   
   // Attachments & Moodboard
-  attachments: AttachmentEntry[];
-  moodboard: MoodboardCard[];
+  attachments?: AttachmentEntry[];
+  moodboard?: MoodboardCard[];
+  agentStatus?: 'idle' | 'running' | 'completed' | 'error';
+  agentProgress?: string;
 }
 
 export interface AISuggestionResponse {

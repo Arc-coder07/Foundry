@@ -4,7 +4,11 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import multer from "multer";
+import dotenv from "dotenv";
 import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard, Milestone } from "./src/types";
+
+// Load environment variables early
+dotenv.config();
 
 // Initialize Gemini SDK safely
 const apiKey = process.env.GEMINI_API_KEY;
@@ -633,7 +637,17 @@ app.post("/api/antigravity/research", async (req, res) => {
     // Send request to Python service
     const pythonServiceUrl = "http://localhost:8000/api/research";
     // We need to pass the IP the Python service can reach. For local dev, 127.0.0.1 is fine.
-    const callbackUrl = `http://127.0.0.1:${PORT}/api/antigravity/callback`; 
+    const callbackUrl = `http://127.0.0.1:${PORT}/api/antigravity/callback`;
+    const progressUrl = `http://127.0.0.1:${PORT}/api/antigravity/progress`;
+    
+    // Set status to running
+    const index = items.findIndex(i => i.id === itemId);
+    if (index !== -1) {
+      items[index].agentStatus = 'running';
+      items[index].agentProgress = 'Initializing Agent...';
+      items[index].updatedAt = new Date().toISOString();
+      writeDatabase(items);
+    }
     
     const response = await fetch(pythonServiceUrl, {
       method: "POST",
@@ -647,7 +661,8 @@ app.post("/api/antigravity/research", async (req, res) => {
         unique_insight: item.uniqueInsight || "",
         target_audience: item.targetAudience || "",
         prompt: prompt || "",
-        callback_url: callbackUrl
+        callback_url: callbackUrl,
+        progress_url: progressUrl
       })
     });
     
@@ -688,6 +703,8 @@ app.post("/api/antigravity/callback", async (req, res) => {
       
       if (!items[index].attachments) items[index].attachments = [];
       items[index].attachments.push(attachment);
+      items[index].agentStatus = 'completed';
+      items[index].agentProgress = 'Report attached';
       items[index].updatedAt = new Date().toISOString();
       writeDatabase(items);
       
@@ -695,6 +712,29 @@ app.post("/api/antigravity/callback", async (req, res) => {
     }
   } else {
     console.error(`Agent failed for item ${item_id}: ${error}`);
+    const items = readDatabase();
+    const index = items.findIndex(i => i.id === item_id);
+    if (index !== -1) {
+      items[index].agentStatus = 'error';
+      items[index].agentProgress = 'Error occurred during generation';
+      items[index].updatedAt = new Date().toISOString();
+      writeDatabase(items);
+    }
+  }
+  
+  res.json({ success: true });
+});
+
+// Progress update from Python service
+app.post("/api/antigravity/progress", async (req, res) => {
+  const { item_id, progress } = req.body;
+  const items = readDatabase();
+  const index = items.findIndex(i => i.id === item_id);
+  
+  if (index !== -1 && items[index].agentStatus === 'running') {
+    items[index].agentProgress = progress;
+    items[index].updatedAt = new Date().toISOString();
+    writeDatabase(items);
   }
   
   res.json({ success: true });

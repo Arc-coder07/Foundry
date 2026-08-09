@@ -184,16 +184,23 @@ export function CoPilotDrawer({
             )}
 
             {action === "expand" && (
-              <div className="text-[10px] font-mono text-text-muted tracking-wide uppercase font-semibold">
-                Ready to weave into MVP scope
-              </div>
+              <button
+                onClick={() => onApplyImprovement(content)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:opacity-90 rounded-lg text-xs font-mono tracking-wider transition-all shadow-md group cursor-pointer font-bold"
+              >
+                <span>APPLY EXPANSION</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </button>
             )}
             
             {action === "audit" && (
-              <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-muted tracking-wide uppercase font-semibold">
+              <button
+                onClick={() => onApplyImprovement(content)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white hover:opacity-90 rounded-lg text-xs font-mono tracking-wider transition-all shadow-md group cursor-pointer font-bold"
+              >
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Validate vulnerabilities next</span>
-              </div>
+                <span>APPLY AUDIT</span>
+              </button>
             )}
           </div>
         )}

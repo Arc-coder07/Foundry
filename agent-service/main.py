@@ -4,6 +4,9 @@ import uvicorn
 from pydantic import BaseModel
 import logging
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from agents import run_research_and_swot, AgentRequest
 
@@ -22,6 +25,7 @@ class ResearchJob(BaseModel):
     target_audience: str
     prompt: str = ""
     callback_url: str
+    progress_url: str
 
 async def process_research_job(job: ResearchJob):
     logger.info(f"Starting research for item {job.item_id}")
@@ -38,6 +42,16 @@ async def process_research_job(job: ResearchJob):
             prompt=job.prompt
         )
         
+        # Notify progress: Agent started
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                await client.post(job.progress_url, json={
+                    "item_id": job.item_id,
+                    "progress": "Agent started: Searching web and synthesizing data..."
+                })
+        except Exception as e:
+            logger.warning(f"Could not send progress update: {e}")
+
         # Run the agent
         result_markdown = await run_research_and_swot(request_data)
         
