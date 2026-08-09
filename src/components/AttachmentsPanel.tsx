@@ -271,49 +271,56 @@ export function AttachmentsPanel({
         </div>
       </div>
 
-      {/* Full-screen Viewer Modal */}
+      {/* Immersive Full-Screen Viewer Overlay */}
       {viewingAttachment && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => { setViewingAttachment(null); setViewContent(null); }}>
-          <div
-            className="bg-surface-container rounded-xl border border-outline-variant shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Viewer Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant">
-              <div className="flex items-center gap-2 min-w-0">
+        <div className="fixed inset-0 z-[100] bg-surface flex flex-col overflow-hidden animate-in fade-in duration-300">
+          
+          {/* Reader Header / Navigation Bar */}
+          <div className="flex items-center justify-between px-8 py-5 border-b border-outline-variant bg-surface-container-lowest sticky top-0 z-10">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="flex items-center gap-2">
                 {viewingAttachment.type === 'md' ? (
-                  <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
                 ) : (
-                  <File className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <File className="w-5 h-5 text-red-400 flex-shrink-0" />
                 )}
-                <h3 className="text-sm font-semibold text-on-surface truncate">{viewingAttachment.originalName}</h3>
-                <span className="text-[9px] font-mono text-text-muted uppercase px-1.5 py-0.5 bg-surface-container-high rounded flex-shrink-0">
-                  {viewingAttachment.type}
-                </span>
+                <h2 className="text-lg font-display tracking-tight font-semibold text-on-surface truncate">
+                  {viewingAttachment.originalName}
+                </h2>
               </div>
-              <button
-                onClick={() => { setViewingAttachment(null); setViewContent(null); }}
-                className="p-1.5 rounded hover:bg-surface-container-high text-text-muted hover:text-on-surface transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <span className="text-[10px] font-mono text-text-muted uppercase px-2 py-1 bg-surface-container-high rounded flex-shrink-0">
+                {viewingAttachment.type}
+              </span>
             </div>
+            
+            <button
+              onClick={() => { setViewingAttachment(null); setViewContent(null); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer border border-outline-variant"
+            >
+              <X className="w-4 h-4" />
+              <span className="text-xs font-mono font-bold tracking-widest uppercase">Close Reader</span>
+            </button>
+          </div>
 
-            {/* Viewer Content */}
-            <div className="flex-1 overflow-auto p-6">
+          {/* Reader Content Canvas */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-6 py-16">
               {viewingAttachment.type === 'md' && viewContent !== null ? (
-                <div className="prose prose-sm prose-invert max-w-none">
+                <div className="w-full">
                   <Markdown content={viewContent} />
                 </div>
               ) : viewingAttachment.type === 'pdf' ? (
-                <iframe
-                  src={`/api/attachments/${item.id}/${viewingAttachment.filename}`}
-                  className="w-full h-full min-h-[60vh] rounded border border-outline-variant/20"
-                  title={viewingAttachment.originalName}
-                />
+                <div className="w-full h-[80vh] shadow-2xl rounded-xl overflow-hidden border border-outline-variant">
+                  <iframe
+                    src={`/api/attachments/${item.id}/${viewingAttachment.filename}`}
+                    className="w-full h-full bg-white"
+                    title={viewingAttachment.originalName}
+                  />
+                </div>
               ) : (
-                <div className="flex items-center justify-center h-40 text-text-muted text-sm">
-                  Loading...
+                <div className="flex flex-col items-center justify-center h-64 text-text-muted">
+                  <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+                  <span className="text-sm font-mono tracking-widest uppercase">Loading Document...</span>
                 </div>
               )}
             </div>

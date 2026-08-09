@@ -43,6 +43,9 @@ export default function App() {
   
   // Synchronizing state indicator
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const totalSessionTokens = items.reduce((acc, item) => acc + (item.agentTokens?.total || 0), 0);
+
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Search filter for lists
@@ -543,6 +546,15 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-6">
+            {totalSessionTokens > 0 && (
+              <div className="hidden md:flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full text-primary">
+                <Zap className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-mono font-bold tracking-widest uppercase">
+                  {totalSessionTokens.toLocaleString()} Session Tokens
+                </span>
+              </div>
+            )}
+            
             {/* Sync Feedback status badge */}
             <div className="flex items-center gap-2 font-mono text-[10px] text-on-surface-variant/70">
               {isSyncing ? (
@@ -751,9 +763,17 @@ export default function App() {
               </button>
             </div>
             
-            <div className="pl-3 flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary/75 animate-ping" />
-              <span className="font-mono text-[9px] text-text-muted uppercase">ACTIVE</span>
+            <div className="pl-3 flex items-center gap-4">
+              {activeItem?.agentTokens && (
+                <div className="hidden md:flex items-center gap-2 text-primary/80 font-mono text-[9px] uppercase tracking-widest bg-primary/5 px-2 py-1 rounded border border-primary/10">
+                  <span className="text-on-surface/50">Run Cost:</span> 
+                  <span className="font-bold">{activeItem.agentTokens.total.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/75 animate-ping" />
+                <span className="font-mono text-[9px] text-text-muted uppercase">ACTIVE</span>
+              </div>
             </div>
           </footer>
         )}

@@ -86,6 +86,11 @@ export interface WorkspaceItem {
   moodboard?: MoodboardCard[];
   agentStatus?: 'idle' | 'running' | 'completed' | 'error';
   agentProgress?: string;
+  agentTokens?: {
+    prompt: number;
+    candidate: number;
+    total: number;
+  };
 }
 
 export interface AISuggestionResponse {

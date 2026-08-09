@@ -679,7 +679,7 @@ app.post("/api/antigravity/research", async (req, res) => {
 
 // Callback from Python service
 app.post("/api/antigravity/callback", async (req, res) => {
-  const { item_id, status, result, error } = req.body;
+  const { item_id, status, result, error, usage } = req.body;
   
   if (status === "completed") {
     // Add result as an attachment to the item
@@ -706,20 +706,27 @@ app.post("/api/antigravity/callback", async (req, res) => {
       items[index].agentStatus = 'completed';
       items[index].agentProgress = 'Report attached';
       items[index].updatedAt = new Date().toISOString();
+      if (usage) {
+        items[index].agentTokens = usage;
+      }
       writeDatabase(items);
       
       console.log(`Agent research saved for item ${item_id}`);
     }
   } else {
-    console.error(`Agent failed for item ${item_id}: ${error}`);
+    // Handle error
     const items = readDatabase();
     const index = items.findIndex(i => i.id === item_id);
     if (index !== -1) {
       items[index].agentStatus = 'error';
-      items[index].agentProgress = 'Error occurred during generation';
+      items[index].agentProgress = `Error: ${error}`;
       items[index].updatedAt = new Date().toISOString();
+      if (usage) {
+        items[index].agentTokens = usage;
+      }
       writeDatabase(items);
     }
+    console.error(`Agent failed for item ${item_id}: ${error}`);
   }
   
   res.json({ success: true });

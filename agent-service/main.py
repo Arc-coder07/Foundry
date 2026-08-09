@@ -54,17 +54,21 @@ async def process_research_job(job: ResearchJob):
             logger.warning(f"Could not send progress update: {e}")
 
         # Run the agent
-        result_markdown = await run_research_and_swot(request_data)
+        result_markdown, usage = await run_research_and_swot(request_data)
         
         logger.info(f"Research complete for {job.item_id}, sending callback")
         
         # Post the result back to the Node.js backend
         async with httpx.AsyncClient(timeout=30.0) as client:
-            await client.post(job.callback_url, json={
+            payload = {
                 "item_id": job.item_id,
                 "status": "completed",
                 "result": result_markdown
-            })
+            }
+            if usage:
+                payload["usage"] = usage
+                
+            await client.post(job.callback_url, json=payload)
             
     except Exception as e:
         logger.error(f"Error processing research for {job.item_id}: {str(e)}")

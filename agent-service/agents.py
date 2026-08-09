@@ -25,11 +25,8 @@ class AgentRequest(BaseModel):
 async def run_research_and_swot(request_data: AgentRequest) -> str:
     
     @hooks.pre_tool_call_decide
-    async def report_telemetry(tool_calls):
-        if not tool_calls:
-            return
-        
-        tool_name = tool_calls[0].name
+    async def report_telemetry(tool_call: types.ToolCall) -> types.HookResult:
+        tool_name = tool_call.name
         message = f"Agent thinking: Investigating via {tool_name}..."
         
         try:
@@ -40,6 +37,8 @@ async def run_research_and_swot(request_data: AgentRequest) -> str:
                 })
         except Exception as e:
             logger.warning(f"Could not send telemetry update: {e}")
+            
+        return types.HookResult(allow=True)
 
     # Enable Web Search and Web Content Reading
     config = LocalAgentConfig(
@@ -81,13 +80,16 @@ Please perform the following steps:
             response = await agent.chat(agent_prompt)
             content = await response.text()
             
-            # Fetch token usage for observability
             usage = agent.conversation.total_usage
+            usage_dict = None
             if usage:
-                token_report = f"\n\n---\n### 📊 AI Compute Metrics\n- **Prompt Tokens**: `{usage.prompt_token_count}`\n- **Candidate Tokens**: `{usage.candidates_token_count}`\n- **Reasoning Tokens**: `{usage.thoughts_token_count}`\n- **Total Session Tokens**: `{usage.total_token_count}`\n"
-                content += token_report
+                usage_dict = {
+                    "prompt": usage.prompt_token_count,
+                    "candidate": usage.candidates_token_count,
+                    "total": usage.total_token_count
+                }
                 
-            return content
+            return content, usage_dict
     except Exception as e:
         logger.error(f"Agent execution failed: {e}")
-        return f"### Research Failed\n\nThe agent encountered an unexpected error:\n```\n{e}\n```\nPlease ensure your API limits are sufficient and try again."
+        return f"### Research Failed\n\nThe agent encountered an unexpected error:\n```\n{e}\n```\nPlease ensure your API limits are sufficient and try again.", None
