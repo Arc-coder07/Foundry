@@ -1,7 +1,9 @@
 import os
 import logging
+import httpx
 from pydantic import BaseModel
 from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig, types
+from google.antigravity.hooks import hooks
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,11 +19,31 @@ class AgentRequest(BaseModel):
     unique_insight: str
     target_audience: str
     prompt: str = ""
+    progress_url: str
 
 # Web Research and SWOT analysis logic
 async def run_research_and_swot(request_data: AgentRequest) -> str:
+    
+    @hooks.pre_tool_call_decide
+    async def report_telemetry(tool_calls):
+        if not tool_calls:
+            return
+        
+        tool_name = tool_calls[0].name
+        message = f"Agent thinking: Investigating via {tool_name}..."
+        
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.post(request_data.progress_url, json={
+                    "item_id": request_data.item_id,
+                    "progress": message
+                })
+        except Exception as e:
+            logger.warning(f"Could not send telemetry update: {e}")
+
     # Enable Web Search and Web Content Reading
     config = LocalAgentConfig(
+        hooks=[report_telemetry],
         capabilities=CapabilitiesConfig(
             enabled_tools=[
                 types.BuiltinTools.SEARCH_WEB,

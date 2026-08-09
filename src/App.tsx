@@ -314,6 +314,23 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setCoPilotContent(data.content);
+        
+        const activeItem = items.find(i => i.id === activeItemId);
+        if (activeItem) {
+          const newGeneration = {
+            id: `gen-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            action: action,
+            content: data.content
+          };
+          
+          const updatedItem = {
+            ...activeItem,
+            copilotGenerations: [newGeneration, ...(activeItem.copilotGenerations || [])]
+          };
+          
+          handleUpdateItem(updatedItem);
+        }
       } else {
         throw new Error(data.error || "Co-pilot synthesis failed");
       }
@@ -336,9 +353,7 @@ export default function App() {
       });
       
       const data = await res.json();
-      if (res.ok) {
-        alert("Antigravity Agent started in the background! A markdown report will be attached to this item when it finishes.");
-      } else {
+      if (!res.ok) {
         throw new Error(data.error || "Failed to start agent");
       }
     } catch (err: any) {
@@ -766,6 +781,11 @@ export default function App() {
         isLoading={coPilotLoading}
         content={coPilotContent}
         error={coPilotError}
+        generations={items.find(i => i.id === activeItemId)?.copilotGenerations || []}
+        onSelectGeneration={(gen) => {
+          setCoPilotAction(gen.action as any);
+          setCoPilotContent(gen.content);
+        }}
         onApplyImprovement={handleApplyCoPilotImprovement}
       />
 

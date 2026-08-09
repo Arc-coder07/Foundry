@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Sparkles, Copy, Check, ArrowRight, ShieldAlert, Zap, Layers } from "lucide-react";
 import { Markdown } from "./Markdown";
+import { CopilotGeneration } from "../types";
 
 interface CoPilotDrawerProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface CoPilotDrawerProps {
   content: string | null;
   error: string | null;
   onApplyImprovement: (improvedText: string) => void;
+  generations?: CopilotGeneration[];
+  onSelectGeneration?: (gen: CopilotGeneration) => void;
 }
 
 export function CoPilotDrawer({
@@ -19,7 +22,9 @@ export function CoPilotDrawer({
   isLoading,
   content,
   error,
-  onApplyImprovement
+  onApplyImprovement,
+  generations = [],
+  onSelectGeneration
 }: CoPilotDrawerProps) {
   const [copied, setCopied] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -82,19 +87,42 @@ export function CoPilotDrawer({
       <div className="relative w-full max-w-xl bg-surface border-l border-outline-variant h-screen flex flex-col shadow-2xl z-10 transition-all duration-300 transform translate-x-0">
         
         {/* Drawer Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-outline-variant bg-surface-container-lowest">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-on-surface animate-pulse" />
-            <h3 className="font-mono text-sm font-semibold tracking-wider text-on-surface uppercase">
-              Foundry Co-Pilot • {action?.toUpperCase()}
-            </h3>
+        <div className="flex flex-col border-b border-outline-variant bg-surface-container-lowest">
+          <div className="flex items-center justify-between px-6 py-4.5">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-on-surface animate-pulse" />
+              <h3 className="font-mono text-sm font-semibold tracking-wider text-on-surface uppercase">
+                Foundry Co-Pilot {action ? `• ${action.toUpperCase()}` : ''}
+              </h3>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-1 rounded hover:bg-surface-container text-text-muted transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1 rounded hover:bg-surface-container text-text-muted transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          
+          {/* Version History Selector */}
+          {generations.length > 0 && (
+            <div className="px-6 pb-4 flex items-center gap-2">
+              <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest font-bold">History:</span>
+              <select 
+                className="bg-surface-container text-xs text-on-surface px-2 py-1 rounded border border-outline-variant outline-none"
+                onChange={(e) => {
+                  const gen = generations.find(g => g.id === e.target.value);
+                  if (gen && onSelectGeneration) onSelectGeneration(gen);
+                }}
+              >
+                <option value="">-- View Past Generations --</option>
+                {generations.map(gen => (
+                  <option key={gen.id} value={gen.id}>
+                    {new Date(gen.timestamp).toLocaleTimeString()} • {gen.action.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Drawer Scrollable Content */}

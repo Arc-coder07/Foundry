@@ -36,6 +36,13 @@ export interface MoodboardCard {
   createdAt: string;
 }
 
+export interface CopilotGeneration {
+  id: string;
+  timestamp: string;
+  action: string;
+  content: string;
+}
+
 export interface WorkspaceItem {
   id: string;
   type: WorkspaceItemType;

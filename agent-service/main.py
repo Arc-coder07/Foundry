@@ -39,7 +39,8 @@ async def process_research_job(job: ResearchJob):
             proposed_solution=job.proposed_solution,
             unique_insight=job.unique_insight,
             target_audience=job.target_audience,
-            prompt=job.prompt
+            prompt=job.prompt,
+            progress_url=job.progress_url
         )
         
         # Notify progress: Agent started

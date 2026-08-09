@@ -1,161 +1,95 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import mermaid from "mermaid";
 
 interface MarkdownProps {
   content: string;
 }
 
+// Initialize Mermaid with a dark theme fitting the app's aesthetic
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  securityLevel: 'loose'
+});
+
+const Mermaid = ({ chart }: { chart: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [svg, setSvg] = React.useState<string>("");
+
+  useEffect(() => {
+    let isMounted = true;
+    if (ref.current && chart) {
+      // Create a unique ID for the mermaid render to avoid collisions
+      const id = `mermaid-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      mermaid.render(id, chart)
+        .then(result => {
+          if (isMounted) setSvg(result.svg);
+        })
+        .catch(e => {
+          console.error("Mermaid parsing failed", e);
+          if (isMounted) setSvg(`<div class="text-red-400 text-xs">Failed to render diagram</div>`);
+        });
+    }
+    return () => { isMounted = false; };
+  }, [chart]);
+
+  return (
+    <div ref={ref} className="flex justify-center my-6 overflow-x-auto bg-surface-container-low p-4 rounded-lg border border-outline-variant/30">
+      {svg ? (
+        <div dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : (
+        <div className="text-text-muted text-xs animate-pulse">Rendering diagram...</div>
+      )}
+    </div>
+  );
+};
+
 export function Markdown({ content }: MarkdownProps) {
   if (!content) return null;
 
-  // Split content by lines
-  const lines = content.split("\n");
-  const elements: React.ReactNode[] = [];
-  
-  let currentList: React.ReactNode[] = [];
-  let currentListType: "bullet" | "number" | null = null;
-  let inCodeBlock = false;
-  let codeLines: string[] = [];
-
-  const flushList = (key: string) => {
-    if (currentList.length > 0) {
-      if (currentListType === "bullet") {
-        elements.push(
-          <ul key={`list-${key}`} className="list-disc pl-6 space-y-2 mb-4 text-on-surface/85">
-            {...currentList}
-          </ul>
-        );
-      } else {
-        elements.push(
-          <ol key={`list-${key}`} className="list-decimal pl-6 space-y-2 mb-4 text-on-surface/85">
-            {...currentList}
-          </ol>
-        );
-      }
-      currentList = [];
-      currentListType = null;
-    }
-  };
-
-  const parseInlineStyles = (text: string): React.ReactNode[] => {
-    // Basic bold **text** and code `code` parsing
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={idx} className="font-semibold text-on-surface">{part.slice(2, -2)}</strong>;
-      }
-      if (part.startsWith("`") && part.endsWith("`")) {
-        return (
-          <code key={idx} className="bg-surface-container border border-outline-variant text-on-surface px-1.5 py-0.5 rounded font-mono text-xs">
-            {part.slice(1, -1)}
-          </code>
-        );
-      }
-      return part;
-    });
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Handle code blocks
-    if (line.trim().startsWith("```")) {
-      if (inCodeBlock) {
-        // End code block
-        elements.push(
-          <pre key={`code-${i}`} className="bg-surface-container-lowest border border-outline-variant p-4 rounded-lg font-mono text-xs text-text-muted overflow-x-auto my-4 max-w-full">
-            <code>{codeLines.join("\n")}</code>
-          </pre>
-        );
-        codeLines = [];
-        inCodeBlock = false;
-      } else {
-        flushList(`flush-${i}`);
-        inCodeBlock = true;
-      }
-      continue;
-    }
-
-    if (inCodeBlock) {
-      codeLines.push(line);
-      continue;
-    }
-
-    // Handle Headers
-    if (line.startsWith("### ")) {
-      flushList(`flush-${i}`);
-      elements.push(
-        <h3 key={i} className="text-base font-medium text-on-surface mt-6 mb-3 font-mono tracking-tight flex items-center gap-2 border-b border-outline-variant pb-1">
-          {parseInlineStyles(line.slice(4))}
-        </h3>
-      );
-    } else if (line.startsWith("## ")) {
-      flushList(`flush-${i}`);
-      elements.push(
-        <h2 key={i} className="text-lg font-medium text-on-surface mt-8 mb-4 font-mono tracking-tight border-b border-outline-variant pb-2">
-          {parseInlineStyles(line.slice(3))}
-        </h2>
-      );
-    } else if (line.startsWith("# ")) {
-      flushList(`flush-${i}`);
-      elements.push(
-        <h1 key={i} className="text-xl font-semibold text-on-surface mt-8 mb-4 font-display tracking-tight">
-          {parseInlineStyles(line.slice(2))}
-        </h1>
-      );
-    }
-    // Handle Bullet Lists
-    else if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
-      const content = line.trim().slice(2);
-      if (currentListType !== "bullet") {
-        flushList(`flush-${i}`);
-        currentListType = "bullet";
-      }
-      currentList.push(
-        <li key={`li-${i}`} className="leading-relaxed">
-          {parseInlineStyles(content)}
-        </li>
-      );
-    }
-    // Handle Numbered Lists
-    else if (/^\d+\.\s/.test(line.trim())) {
-      const content = line.trim().replace(/^\d+\.\s/, "");
-      if (currentListType !== "number") {
-        flushList(`flush-${i}`);
-        currentListType = "number";
-      }
-      currentList.push(
-        <li key={`li-${i}`} className="leading-relaxed">
-          {parseInlineStyles(content)}
-        </li>
-      );
-    }
-    // Handle Blockquotes
-    else if (line.trim().startsWith("> ")) {
-      flushList(`flush-${i}`);
-      const content = line.trim().slice(2);
-      elements.push(
-        <blockquote key={i} className="border-l-2 border-primary bg-surface-container-low px-4 py-3 rounded-r-md italic text-on-surface/80 my-4 leading-relaxed">
-          {parseInlineStyles(content)}
-        </blockquote>
-      );
-    }
-    // Handle Empty Lines
-    else if (line.trim() === "") {
-      flushList(`flush-${i}`);
-    }
-    // Handle Regular Paragraphs
-    else {
-      flushList(`flush-${i}`);
-      elements.push(
-        <p key={i} className="leading-relaxed text-on-surface/90 text-sm md:text-base my-3">
-          {parseInlineStyles(line)}
-        </p>
-      );
-    }
-  }
-
-  // Flush any final lists
-  flushList("final");
-
-  return <div className="space-y-1">{elements}</div>;
+  return (
+    <div className="prose prose-sm prose-invert max-w-none 
+      prose-headings:font-display prose-headings:tracking-tight prose-headings:text-on-surface
+      prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-h3:font-mono 
+      prose-a:text-primary hover:prose-a:text-primary/80 
+      prose-code:text-xs prose-code:bg-surface-container prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-code:text-on-surface
+      prose-pre:bg-surface-container-lowest prose-pre:border prose-pre:border-outline-variant prose-pre:text-text-muted prose-pre:p-4 prose-pre:rounded-lg
+      prose-blockquote:border-l-2 prose-blockquote:border-primary prose-blockquote:bg-surface-container-low prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:rounded-r-md prose-blockquote:text-on-surface/80
+      prose-table:w-full prose-table:border-collapse prose-table:text-sm
+      prose-th:border prose-th:border-outline-variant prose-th:bg-surface-container-high prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:font-semibold
+      prose-td:border prose-td:border-outline-variant prose-td:px-3 prose-td:py-2
+      prose-img:rounded-lg prose-img:border prose-img:border-outline-variant
+      prose-ul:list-disc prose-ul:pl-6 prose-ol:list-decimal prose-ol:pl-6 prose-li:my-1 text-on-surface/90">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code(props: any) {
+            const {children, className, node, ...rest} = props;
+            const match = /language-(\w+)/.exec(className || '');
+            const isMermaid = match && match[1] === 'mermaid';
+            
+            if (isMermaid) {
+              return <Mermaid chart={String(children).replace(/\n$/, '')} />;
+            }
+            
+            return match ? (
+              <pre {...rest} className={className}>
+                <code>
+                  {children}
+                </code>
+              </pre>
+            ) : (
+              <code {...rest} className={className}>
+                {children}
+              </code>
+            );
+          }
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 }
