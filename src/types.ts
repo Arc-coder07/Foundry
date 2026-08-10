@@ -84,6 +84,7 @@ export interface WorkspaceItem {
   // Attachments & Moodboard
   attachments?: AttachmentEntry[];
   moodboard?: MoodboardCard[];
+  copilotGenerations?: CopilotGeneration[];
   agentStatus?: 'idle' | 'running' | 'completed' | 'error';
   agentProgress?: string;
   agentTokens?: {
