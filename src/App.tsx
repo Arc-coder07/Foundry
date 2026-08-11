@@ -20,6 +20,7 @@ import { Editor } from "./components/Editor";
 import { HomeView } from "./components/HomeView";
 import { ProfileView } from "./components/ProfileView";
 import ForgeTimeline from "./components/ForgeTimeline";
+import { IntegrationsView } from "./components/IntegrationsView";
 import { WorkspaceItem, WorkspaceItemType, WorkspaceItemStatus, UserProfile, Milestone } from "./types";
 
 export default function App() {
@@ -605,6 +606,11 @@ export default function App() {
             <ProfileView
               profile={userProfile}
               onUpdateProfile={handleUpdateProfile}
+              onBack={() => setView("home")}
+            />
+           ) : currentView === "integrations" ? (
+            /* INTEGRATIONS / MCP VIEW */
+            <IntegrationsView
               onBack={() => setView("home")}
             />
           ) : currentView === "forge-timeline" ? (

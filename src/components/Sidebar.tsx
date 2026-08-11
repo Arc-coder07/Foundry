@@ -9,7 +9,8 @@ import {
   Command,
   Compass,
   Zap,
-  BarChart3
+  BarChart3,
+  Plug
 } from "lucide-react";
 import { WorkspaceItem, UserProfile } from "../types";
 
@@ -193,6 +194,23 @@ export function Sidebar({
         ))}
 
         <div className="h-px bg-outline-variant my-5 mx-2"></div>
+
+        <p className="text-[9px] font-mono text-text-muted px-2.5 py-1.5 uppercase tracking-wider">SYSTEM</p>
+
+        <button 
+          onClick={() => setView("integrations")}
+          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
+            currentView === "integrations" 
+              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
+              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
+          }`}
+        >
+          <span className="flex items-center gap-3">
+            <Plug className="w-4 h-4" />
+            <span>Integrations</span>
+          </span>
+          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="MCP Online" />
+        </button>
 
         <button 
           onClick={() => setView("archive")}
