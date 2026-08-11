@@ -40,7 +40,13 @@ async def run_research_and_swot(request_data: AgentRequest) -> str:
             
         return types.HookResult(allow=True)
 
-    # Enable Web Search and Web Content Reading
+    # Path to the Foundry MCP server
+    mcp_server_path = os.path.join(os.path.dirname(__file__), "foundry_mcp_server.py")
+    
+    # Path to the Python interpreter in the venv
+    venv_python = os.path.join(os.path.dirname(__file__), "venv", "bin", "python3")
+    
+    # Enable Web Search, URL Reading, and Foundry MCP tools
     config = LocalAgentConfig(
         hooks=[report_telemetry],
         capabilities=CapabilitiesConfig(
@@ -50,6 +56,13 @@ async def run_research_and_swot(request_data: AgentRequest) -> str:
                 types.BuiltinTools.VIEW_FILE,
             ]
         ),
+        mcp_servers=[
+            types.McpStdioServer(
+                name="foundry",
+                command=venv_python,
+                args=[mcp_server_path],
+            )
+        ],
         # Ensure GEMINI_API_KEY is available in the environment
         api_key=os.environ.get("GEMINI_API_KEY")
     )
@@ -66,13 +79,18 @@ Target Audience: {request_data.target_audience}
 
 User Request: {request_data.prompt}
 
+You have access to these capabilities:
+- Web search and URL reading for live market research.
+- Foundry workspace tools (foundry_list_items, foundry_search_items, foundry_get_item, etc.) to read other product ideas in the user's workspace for cross-referencing and context.
+
 Please perform the following steps:
-1. Search the web for competitors and similar products.
-2. Search for the actual market size and relevant market trends.
-3. Perform an advanced SWOT analysis (Strengths, Weaknesses, Opportunities, Threats) based on your findings.
-4. Output a comprehensive Markdown report of your findings. DO NOT include any preamble, only the markdown report. Use headings (###) to separate sections.
-5. If a tool fails (e.g. rate limit or quota exceeded), gracefully note the limitation in your report and continue. DO NOT output raw error strings like "GenerateContent failed".
-6. Use Mermaid.js (```mermaid) syntax to generate beautiful diagrams for market mapping or architecture whenever possible. Use Markdown Tables for competitor feature comparisons.
+1. Optionally use foundry_list_items or foundry_search_items to see if the user has related ideas in their workspace that provide additional context.
+2. Search the web for competitors and similar products.
+3. Search for the actual market size and relevant market trends.
+4. Perform an advanced SWOT analysis (Strengths, Weaknesses, Opportunities, Threats) based on your findings.
+5. Output a comprehensive Markdown report of your findings. DO NOT include any preamble, only the markdown report. Use headings (###) to separate sections.
+6. If a tool fails (e.g. rate limit or quota exceeded), gracefully note the limitation in your report and continue. DO NOT output raw error strings like "GenerateContent failed".
+7. Use Mermaid.js (```mermaid) syntax to generate beautiful diagrams for market mapping or architecture whenever possible. Use Markdown Tables for competitor feature comparisons.
 """
     
     try:
