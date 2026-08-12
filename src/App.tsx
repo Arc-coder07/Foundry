@@ -350,10 +350,30 @@ export default function App() {
   const handleTriggerAgent = async () => {
     if (!activeItemId) return;
     try {
+      // Read enabled MCP servers from localStorage
+      const savedServers = localStorage.getItem("foundry-mcp-servers");
+      const allServers = savedServers ? JSON.parse(savedServers) : [];
+      const enabledServers = allServers
+        .filter((s: any) => s.enabled)
+        .map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type || "stdio",
+          command: s.command || null,
+          args: s.args || null,
+          url: s.url || null,
+          api_token: s.apiToken || null,
+          env_key: s.envKey || null,
+        }));
+
       const res = await fetch("/api/antigravity/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: activeItemId, prompt: "Please research this idea and perform a SWOT analysis." })
+        body: JSON.stringify({ 
+          itemId: activeItemId, 
+          prompt: "Please research this idea and perform a SWOT analysis.",
+          mcpServers: enabledServers
+        })
       });
       
       const data = await res.json();

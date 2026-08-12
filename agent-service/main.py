@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from agents import run_research_and_swot, AgentRequest
+from agents import run_research_and_swot, AgentRequest, McpServerEntry
 
 app = FastAPI()
 
@@ -26,10 +26,19 @@ class ResearchJob(BaseModel):
     prompt: str = ""
     callback_url: str
     progress_url: str
+    mcp_servers: list[dict] = []
 
 async def process_research_job(job: ResearchJob):
     logger.info(f"Starting research for item {job.item_id}")
     try:
+        # Parse MCP server configs
+        mcp_entries = []
+        for srv_dict in job.mcp_servers:
+            try:
+                mcp_entries.append(McpServerEntry(**srv_dict))
+            except Exception as e:
+                logger.warning(f"Skipping invalid MCP server config: {e}")
+        
         # Construct the request data
         request_data = AgentRequest(
             item_id=job.item_id,
@@ -40,7 +49,8 @@ async def process_research_job(job: ResearchJob):
             unique_insight=job.unique_insight,
             target_audience=job.target_audience,
             prompt=job.prompt,
-            progress_url=job.progress_url
+            progress_url=job.progress_url,
+            mcp_servers=mcp_entries
         )
         
         # Notify progress: Agent started

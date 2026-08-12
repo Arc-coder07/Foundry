@@ -625,7 +625,7 @@ User's instruction/request:
 
 // Antigravity Agent Trigger Endpoint
 app.post("/api/antigravity/research", async (req, res) => {
-  const { itemId, prompt } = req.body;
+  const { itemId, prompt, mcpServers } = req.body;
   const items = readDatabase();
   const item = items.find(i => i.id === itemId);
 
@@ -662,7 +662,8 @@ app.post("/api/antigravity/research", async (req, res) => {
         target_audience: item.targetAudience || "",
         prompt: prompt || "",
         callback_url: callbackUrl,
-        progress_url: progressUrl
+        progress_url: progressUrl,
+        mcp_servers: mcpServers || []
       })
     });
     
