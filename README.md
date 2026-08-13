@@ -96,7 +96,16 @@ Follow these instructions to get a copy of the project up and running on your lo
 ## 📸 Sneak Peek
 
 <div align="center">
-  <img src="foundry_workspace_screenshot.png" alt="Foundry Workspace Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1);"/>
+  <img src="foundry_workspace_screenshot.png" alt="Foundry Workspace Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;"/>
+  <br/>
+  <br/>
+  <img src="foundry_timeline_screenshot.png" alt="Foundry Timeline Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;"/>
+  <br/>
+  <br/>
+  <img src="foundry_pipeline_screenshot.png" alt="Foundry Pipeline Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;"/>
+  <br/>
+  <br/>
+  <img src="foundry_integrations_screenshot.png" alt="Foundry Integrations Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1);"/>
 </div>
 
 *(Note: Actual UI screenshots may differ as the platform evolves!)*
