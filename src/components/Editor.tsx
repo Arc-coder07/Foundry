@@ -64,9 +64,12 @@ export function Editor({
   }, [item.id]);
 
   // Debounced/Triggered Updates
-  const triggerUpdate = (fields: Partial<WorkspaceItem>) => {
+  const triggerUpdate = (fields: Partial<WorkspaceItem>, targetId: string = item.id) => {
+    const targetItem = targetId === item.id ? item : allItems.find(i => i.id === targetId);
+    if (!targetItem) return;
+    
     const updated = {
-      ...item,
+      ...targetItem,
       ...fields,
       updatedAt: new Date().toISOString()
     };
@@ -265,7 +268,7 @@ export function Editor({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            onBlur={() => triggerUpdate({ title })}
+            onBlur={() => triggerUpdate({ title }, item.id)}
             className="w-full bg-transparent border-none text-on-surface font-display text-3xl md:text-4xl lg:text-5xl font-light leading-[1.15] tracking-tight focus:text-primary outline-none py-1.5 border-b border-transparent focus:border-outline-variant transition-all placeholder-on-surface-variant/30"
             placeholder="Autonomous Neural Mesh..."
           />
@@ -290,7 +293,7 @@ export function Editor({
             }}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            onBlur={() => triggerUpdate({ summary })}
+            onBlur={() => triggerUpdate({ summary }, item.id)}
             rows={1}
             className="w-full bg-transparent border-none text-on-surface text-sm md:text-base outline-none font-medium placeholder-on-surface-variant/30 leading-relaxed resize-none overflow-hidden"
             placeholder="Describe what this is in a single elegant, high-impact sentence..."
@@ -303,7 +306,7 @@ export function Editor({
           <textarea
             value={problem}
             onChange={(e) => setProblem(e.target.value)}
-            onBlur={() => triggerUpdate({ problem })}
+            onBlur={() => triggerUpdate({ problem }, item.id)}
             rows={4}
             className="w-full bg-transparent border-none text-on-surface/90 text-sm md:text-base leading-relaxed outline-none resize-none placeholder-on-surface-variant/30"
             placeholder="What friction exists in the status quo? Why does this matter? Detail the core user trauma..."
@@ -316,7 +319,7 @@ export function Editor({
           <textarea
             value={solution}
             onChange={(e) => setSolution(e.target.value)}
-            onBlur={() => triggerUpdate({ proposedSolution: solution })}
+            onBlur={() => triggerUpdate({ proposedSolution: solution }, item.id)}
             rows={4}
             className="w-full bg-transparent border-none text-on-surface/90 text-sm md:text-base leading-relaxed outline-none resize-none placeholder-on-surface-variant/30"
             placeholder="How does your protocol or product solve this? Keep it technical, elegant, and definitive..."
@@ -332,7 +335,7 @@ export function Editor({
           <textarea
             value={uniqueInsight}
             onChange={(e) => setUniqueInsight(e.target.value)}
-            onBlur={() => triggerUpdate({ uniqueInsight })}
+            onBlur={() => triggerUpdate({ uniqueInsight }, item.id)}
             rows={4}
             className="w-full bg-transparent border-none text-on-surface text-base md:text-lg font-light italic leading-relaxed outline-none resize-none placeholder-on-surface-variant/30"
             placeholder="What secret do you know that competitors ignore? Hardware isn't the bottleneck..."

@@ -674,6 +674,16 @@ app.post("/api/antigravity/research", async (req, res) => {
     res.json({ success: true, message: "Agent started in background" });
   } catch (error: any) {
     console.error("Failed to start agent:", error);
+    
+    // Reset status on failure
+    const items = readDatabase();
+    const index = items.findIndex(i => i.id === itemId);
+    if (index !== -1) {
+      items[index].agentStatus = 'error';
+      items[index].agentProgress = 'Failed to start agent service';
+      writeDatabase(items);
+    }
+    
     res.status(500).json({ error: error.message || "Failed to contact Antigravity service." });
   }
 });
