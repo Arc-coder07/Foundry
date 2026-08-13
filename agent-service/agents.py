@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import httpx
 from pydantic import BaseModel
@@ -57,7 +58,10 @@ async def run_research_and_swot(request_data: AgentRequest) -> str:
     mcp_server_path = os.path.join(os.path.dirname(__file__), "foundry_mcp_server.py")
     
     # Path to the Python interpreter in the venv
-    venv_python = os.path.join(os.path.dirname(__file__), "venv", "bin", "python3")
+    if sys.platform == "win32":
+        venv_python = os.path.join(os.path.dirname(__file__), "venv", "Scripts", "python.exe")
+    else:
+        venv_python = os.path.join(os.path.dirname(__file__), "venv", "bin", "python3")
     
     # Build MCP servers list: always include built-in Foundry server
     mcp_server_list = [
