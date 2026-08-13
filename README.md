@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="banner_hero_dark.png">
-    <img alt="Foundry Hero Banner" src="banner_hero_light.png" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="foundry_banner_dark.jpg">
+    <img alt="Foundry Hero Banner" src="foundry_banner_light.jpg" width="100%">
   </picture>
   
   <br/>
