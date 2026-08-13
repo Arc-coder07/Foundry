@@ -1,8 +1,5 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="foundry_banner_dark_cropped.jpg">
-    <img alt="Foundry Hero Banner" src="foundry_banner_light_cropped.jpg" width="100%">
-  </picture>
+  <img alt="Foundry Hero Banner" src="foundry_banner_light_cropped.jpg" width="100%">
   
   <br/>
   <br/>
@@ -99,7 +96,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 ## 📸 Sneak Peek
 
 <div align="center">
-  <img src="pixel_drift_screenshot.png" alt="Foundry Workspace Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1);"/>
+  <img src="foundry_workspace_screenshot.png" alt="Foundry Workspace Screenshot" width="80%" style="border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1);"/>
 </div>
 
 *(Note: Actual UI screenshots may differ as the platform evolves!)*
