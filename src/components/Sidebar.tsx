@@ -12,7 +12,6 @@ import {
   BarChart3,
   Plug
 } from "lucide-react";
-} from "lucide-react";
 import { WorkspaceItem, UserProfile } from "../types";
 import { motion } from "motion/react";
 
