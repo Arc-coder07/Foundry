@@ -11,7 +11,8 @@ import {
   Type,
   Globe
 } from "lucide-react";
-import { WorkspaceItem, MoodboardCard } from "../types";
+import { MoodboardCard, WorkspaceItem } from "../types";
+import EmptyState from "./EmptyState";
 
 interface MoodboardViewProps {
   item: WorkspaceItem;
@@ -435,24 +436,15 @@ export function MoodboardView({
         </div>
       ) : (
         /* Empty State */
-        <div className="py-20 border-2 border-dashed border-outline-variant/20 rounded-xl text-center max-w-md mx-auto space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-xl bg-surface-container-high/50 border border-outline-variant/20 flex items-center justify-center">
-            <ImageIcon className="w-7 h-7 text-text-muted/40" />
-          </div>
-          <div>
-            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">Empty canvas</h3>
-            <p className="text-[11px] text-text-muted mt-1 leading-relaxed max-w-xs mx-auto">
-              Start collecting inspiration — add images, quick notes, or save reference links to build your vision.
-            </p>
-          </div>
+        <EmptyState type="moodboard">
           <button
             onClick={() => { setShowAddMenu(false); setAddMode('note'); }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:opacity-90 text-on-primary rounded text-[10px] font-mono font-bold tracking-wider transition-all shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:opacity-90 text-on-primary rounded text-[10px] font-mono font-bold tracking-wider transition-all shadow-sm cursor-pointer mt-4"
           >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            ADD FIRST CARD
+            <Plus className="w-3.5 h-3.5" />
+            <span>ADD FIRST NOTE</span>
           </button>
-        </div>
+        </EmptyState>
       )}
     </div>
   );

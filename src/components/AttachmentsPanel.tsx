@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { WorkspaceItem, AttachmentEntry } from "../types";
 import { Markdown } from "./Markdown";
+import { useToast } from "./ToastContext";
 
 interface AttachmentsPanelProps {
   item: WorkspaceItem;
@@ -32,13 +33,14 @@ export function AttachmentsPanel({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
 
   const attachments = item.attachments || [];
 
   const handleUpload = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (!ext || !['md', 'pdf'].includes(ext)) {
-      alert('Only .md and .pdf files are supported.');
+      addToast('Only .md and .pdf files are supported.', 'error');
       return;
     }
 
@@ -55,12 +57,14 @@ export function AttachmentsPanel({
       if (res.ok) {
         const attachment: AttachmentEntry = await res.json();
         onAttachmentAdded(attachment);
+        addToast('File uploaded successfully', 'success');
       } else {
         const err = await res.json();
-        alert(err.error || 'Upload failed');
+        addToast(err.error || 'Upload failed', 'error');
       }
     } catch (err) {
       console.error('Upload failed:', err);
+      addToast('Upload failed', 'error');
     } finally {
       setIsUploading(false);
     }

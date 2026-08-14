@@ -10,9 +10,14 @@ import {
   BookOpen, 
   Terminal,
   Activity,
-  Heart
+  Heart,
+  Target,
+  TrendingUp,
+  Cpu,
+  Workflow
 } from "lucide-react";
 import { WorkspaceItem } from "../types";
+import EmptyState from "./EmptyState";
 
 interface HomeViewProps {
   items: WorkspaceItem[];
@@ -211,8 +216,8 @@ export function HomeView({
             ))}
           </div>
         ) : (
-          <div className="py-16 border border-dashed border-outline-variant rounded-xl text-center text-text-muted text-xs italic">
-            Your think pool is currently empty. Capturing your first idea is just a click away.
+          <div className="py-8">
+            <EmptyState type="ideas" />
           </div>
         )}
       </section>

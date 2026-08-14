@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, Sparkles, Copy, Check, ArrowRight, ShieldAlert, Zap, Layers } from "lucide-react";
 import { Markdown } from "./Markdown";
 import { CopilotGeneration } from "../types";
+import { SkeletonLoader } from "./SkeletonLoader";
 
 interface CoPilotDrawerProps {
   isOpen: boolean;
@@ -130,11 +131,8 @@ export function CoPilotDrawer({
           {isLoading ? (
             /* Loading Sequence State */
             <div className="h-full flex flex-col items-center justify-center text-center space-y-6 px-4">
-              <div className="relative flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border border-primary/20 border-t-primary animate-spin" />
-                <Sparkles className="absolute w-6 h-6 text-on-surface animate-pulse" />
-              </div>
-              <div className="max-w-xs space-y-2">
+              <SkeletonLoader type="copilot" />
+              <div className="max-w-xs space-y-2 mt-8">
                 <p className="text-xs font-mono text-on-surface tracking-widest uppercase font-bold">CO-PILOT CONVENING</p>
                 <p className="text-xs text-text-muted font-mono italic h-10 flex items-center justify-center leading-normal">
                   "{currentStepMessage}"
