@@ -12,7 +12,45 @@ import {
   BarChart3,
   Plug
 } from "lucide-react";
+} from "lucide-react";
 import { WorkspaceItem, UserProfile } from "../types";
+import { motion } from "motion/react";
+
+interface NavItemProps {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  currentView: string;
+  onClick: () => void;
+  badge?: React.ReactNode;
+}
+
+function NavItem({ id, label, icon, currentView, onClick, badge }: NavItemProps) {
+  const isActive = currentView === id;
+  return (
+    <button 
+      onClick={onClick}
+      className={`relative flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
+        isActive
+          ? "text-on-surface font-semibold" 
+          : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
+      }`}
+    >
+      {isActive && (
+        <motion.div
+          layoutId="sidebar-active"
+          className="absolute inset-0 bg-surface-container border border-outline-variant rounded-md"
+          transition={{ type: "spring", bounce: 0.1, duration: 0.4 }}
+        />
+      )}
+      <span className="flex items-center gap-3 relative z-10">
+        {icon}
+        <span>{label}</span>
+      </span>
+      {badge && <span className="relative z-10">{badge}</span>}
+    </button>
+  );
+}
 
 interface SidebarProps {
   currentView: string;
@@ -92,139 +130,91 @@ export function Sidebar({
       <nav className="flex-1 space-y-1.5 overflow-y-auto pr-1">
         <p className="text-[9px] font-mono text-text-muted px-2.5 py-1.5 uppercase tracking-wider">NAVIGATE</p>
         
-        <button 
+        <NavItem
+          id="home"
+          label="Home"
+          icon={<Compass className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("home")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "home" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <Compass className="w-4 h-4" />
-            <span>Home</span>
-          </span>
-        </button>
+        />
 
-        <button 
+        <NavItem
+          id="ideas"
+          label="Ideas"
+          icon={<Lightbulb className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("ideas")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "ideas" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <Lightbulb className="w-4 h-4" />
-            <span>Ideas</span>
-          </span>
-          {ideasCount > 0 && (
+          badge={ideasCount > 0 ? (
             <span className="text-[10px] font-mono text-text-muted bg-surface-container border border-outline-variant px-1.5 py-0.5 rounded">
               {ideasCount}
             </span>
-          )}
-        </button>
+          ) : undefined}
+        />
 
-        <button 
+        <NavItem
+          id="collections"
+          label="Collections"
+          icon={<Layers className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("collections")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "collections" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <Layers className="w-4 h-4" />
-            <span>Collections</span>
-          </span>
-        </button>
+        />
 
-        <button 
+        <NavItem
+          id="pinned"
+          label="Pinned"
+          icon={<Pin className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("pinned")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "pinned" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <Pin className="w-4 h-4" />
-            <span>Pinned</span>
-          </span>
-          {pinnedCount > 0 && (
+          badge={pinnedCount > 0 ? (
             <span className="text-[10px] font-mono text-text-muted bg-surface-container border border-outline-variant px-1.5 py-0.5 rounded">
               {pinnedCount}
             </span>
-          )}
-        </button>
+          ) : undefined}
+        />
 
-        <button 
+        <NavItem
+          id="forge-timeline"
+          label="Forge Timeline"
+          icon={<BarChart3 className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("forge-timeline")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "forge-timeline" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <BarChart3 className="w-4 h-4" />
-            <span>Forge Timeline</span>
-          </span>
-        </button>
+        />
 
         <div className="h-px bg-outline-variant my-5 mx-2"></div>
         
         <p className="text-[9px] font-mono text-text-muted px-2.5 py-1.5 uppercase tracking-wider">WORKSPACE SECTIONS</p>
         
         {collections.map(col => (
-          <button
+          <NavItem
             key={col}
+            id={`collection-${col}`}
+            label={col}
+            icon={<span className="w-1.5 h-1.5 rounded-full bg-outline ml-1.5" />}
+            currentView={currentView}
             onClick={() => setView(`collection-${col}`)}
-            className={`flex items-center justify-between px-3.5 py-2 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-              currentView === `collection-${col}`
-                ? "text-on-surface bg-surface-container border border-outline-variant font-semibold"
-                : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-outline" />
-              <span className="truncate">{col}</span>
-            </span>
-          </button>
+          />
         ))}
 
         <div className="h-px bg-outline-variant my-5 mx-2"></div>
 
         <p className="text-[9px] font-mono text-text-muted px-2.5 py-1.5 uppercase tracking-wider">SYSTEM</p>
 
-        <button 
+        <NavItem
+          id="integrations"
+          label="Integrations"
+          icon={<Plug className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("integrations")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "integrations" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <Plug className="w-4 h-4" />
-            <span>Integrations</span>
-          </span>
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="MCP Online" />
-        </button>
+          badge={<span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="MCP Online" />}
+        />
 
-        <button 
+        <NavItem
+          id="archive"
+          label="Archive"
+          icon={<Archive className="w-4 h-4" />}
+          currentView={currentView}
           onClick={() => setView("archive")}
-          className={`flex items-center justify-between px-3.5 py-2.5 w-full rounded-md text-xs transition-all duration-150 cursor-pointer ${
-            currentView === "archive" 
-              ? "text-on-surface bg-surface-container border border-outline-variant font-semibold" 
-              : "text-text-muted hover:text-on-surface hover:bg-surface-container-low"
-          }`}
-        >
-          <span className="flex items-center gap-3">
-            <Archive className="w-4 h-4" />
-            <span>Archive</span>
-          </span>
-        </button>
+        />
       </nav>
 
       {/* Profile & Settings Footer */}

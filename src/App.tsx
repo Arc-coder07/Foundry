@@ -15,21 +15,30 @@ import {
 } from "lucide-react";
 import { Sidebar } from "./components/Sidebar";
 import { CommandPalette } from "./components/CommandPalette";
+import { ShortcutCheatsheet } from "./components/ShortcutCheatsheet";
 import { CoPilotDrawer } from "./components/CoPilotDrawer";
 import { Editor } from "./components/Editor";
 import { HomeView } from "./components/HomeView";
 import { ProfileView } from "./components/ProfileView";
 import ForgeTimeline from "./components/ForgeTimeline";
 import { IntegrationsView } from "./components/IntegrationsView";
+import EmptyState from "./components/EmptyState";
+import { SkeletonLoader } from "./components/SkeletonLoader";
+import { useToast } from "./components/ToastContext";
+import { PageTransition } from "./components/PageTransition";
+import { AnimatePresence } from "motion/react";
 import { WorkspaceItem, WorkspaceItemType, WorkspaceItemStatus, UserProfile, Milestone } from "./types";
 
 export default function App() {
+  const { addToast } = useToast();
   const [items, setItems] = useState<WorkspaceItem[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [currentView, setView] = useState<string>("home");
   
   // Modals & Drawers
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [coPilotOpen, setCoPilotOpen] = useState(false);
   const [coPilotAction, setCoPilotAction] = useState<"improve" | "audit" | "expand" | null>(null);
   const [coPilotLoading, setCoPilotLoading] = useState(false);
@@ -82,6 +91,7 @@ export default function App() {
   }, []);
 
   const fetchItems = async () => {
+    setIsLoadingItems(true);
     try {
       const res = await fetch("/api/items");
       if (res.ok) {
@@ -93,6 +103,8 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setApiError("Database connection failed. Operating in offline state.");
+    } finally {
+      setIsLoadingItems(false);
     }
   };
 
@@ -176,7 +188,23 @@ export default function App() {
 
   // Keyboard Shortcuts Listening
   useEffect(() => {
-    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA" ||
+        document.activeElement?.tagName === "SELECT" ||
+        (document.activeElement as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+      
+      // ? to toggle cheatsheet (Shift + /)
+      if (e.key === '?') {
+        e.preventDefault();
+        setCheatsheetOpen(prev => !prev);
+      }
+      
       // ⌘K or Ctrl+K for search
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
@@ -193,8 +221,8 @@ export default function App() {
       }
     };
 
-    window.addEventListener("keydown", handleGlobalShortcuts);
-    return () => window.removeEventListener("keydown", handleGlobalShortcuts);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [items]);
 
   // Handle Light/Dark toggle
@@ -382,7 +410,7 @@ export default function App() {
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Communication failure with agent service.");
+      addToast(err.message || "Communication failure with agent service.", "error");
     }
   };
 
@@ -611,54 +639,69 @@ export default function App() {
             </div>
           )}
 
-          {activeItemId && activeItem ? (
-            /* ACTIVE ITEM EDITOR */
-            <Editor
-              item={activeItem}
-              allItems={items}
-              onUpdate={handleUpdateItem}
-              onDelete={handleDeleteItem}
-              onSwitchItem={(id) => setActiveItemId(id)}
-              isSyncing={isSyncing}
-            />
-           ) : currentView === "profile" ? (
-            /* PROFILE VIEW */
-            <ProfileView
-              profile={userProfile}
-              onUpdateProfile={handleUpdateProfile}
-              onBack={() => setView("home")}
-            />
-           ) : currentView === "integrations" ? (
+          <AnimatePresence mode="wait">
+            {activeItemId && activeItem ? (
+              /* ACTIVE ITEM EDITOR */
+              <PageTransition viewKey="editor">
+                <Editor
+                  item={activeItem}
+                  allItems={items}
+                  onUpdate={handleUpdateItem}
+                  onDelete={handleDeleteItem}
+                  onSwitchItem={(id) => setActiveItemId(id)}
+                  isSyncing={isSyncing}
+                  milestones={milestones}
+                  onCreateMilestone={handleCreateMilestone}
+                  onUpdateMilestone={handleUpdateMilestone}
+                  onDeleteMilestone={handleDeleteMilestone}
+                />
+              </PageTransition>
+             ) : currentView === "profile" ? (
+              /* PROFILE VIEW */
+              <PageTransition viewKey="profile">
+                <ProfileView
+                  profile={userProfile}
+                  onUpdateProfile={handleUpdateProfile}
+                  onBack={() => setView("home")}
+                />
+              </PageTransition>
+             ) : currentView === "integrations" ? (
             /* INTEGRATIONS / MCP VIEW */
             <IntegrationsView
               onBack={() => setView("home")}
             />
-          ) : currentView === "forge-timeline" ? (
-            /* FORGE TIMELINE VIEW */
-            <ForgeTimeline
-              items={items}
-              milestones={milestones}
-              onSelectItem={(id) => {
-                setActiveItemId(id);
-                setView("workspace");
-              }}
-              onCreateMilestone={handleCreateMilestone}
-              onUpdateMilestone={handleUpdateMilestone}
-              onDeleteMilestone={handleDeleteMilestone}
-            />
-          ) : currentView === "home" ? (
+            ) : currentView === "forge-timeline" ? (
+              /* FORGE TIMELINE VIEW */
+              <PageTransition viewKey="timeline">
+                <ForgeTimeline
+                  items={items}
+                  milestones={milestones}
+                  onSelectItem={(id) => {
+                    setActiveItemId(id);
+                    setView("editor");
+                  }}
+                  onCreateMilestone={handleCreateMilestone}
+                  onUpdateMilestone={handleUpdateMilestone}
+                  onDeleteMilestone={handleDeleteMilestone}
+                  onBack={() => setView("home")}
+                />
+              </PageTransition>
+            ) : currentView === "home" ? (
             /* LANDING STARTING SCREEN */
-            <HomeView
-              items={items}
-              onSelectItem={(id) => {
-                setActiveItemId(id);
-                setView("workspace");
-              }}
-              onCreateItem={(type, customData) => { handleCreateItem(type, customData); }}
-            />
+            <PageTransition viewKey="home">
+              <HomeView
+                items={items}
+                onSelectItem={(id) => {
+                  setActiveItemId(id);
+                  setView("editor");
+                }}
+                onCreateItem={(type, customData) => { handleCreateItem(type, customData); }}
+              />
+            </PageTransition>
           ) : (
             /* DIRECTORY / OPPORTUNITY FILTER LIST VIEW */
-            <div className="max-w-[1000px] mx-auto space-y-8 py-4">
+            <PageTransition viewKey="directory">
+              <div className="max-w-[1000px] mx-auto space-y-8 py-4">
               
               {/* Directory Header with Quick Search */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/20 pb-4">
@@ -685,14 +728,18 @@ export default function App() {
               </div>
 
               {/* Opportunities list */}
-              {listItems.length > 0 ? (
+              {isLoadingItems ? (
+                <div className="py-12">
+                  <SkeletonLoader type="list" />
+                </div>
+              ) : listItems.length > 0 ? (
                 <div className="space-y-3">
                   {listItems.map(item => (
                     <div
                       key={item.id}
                       onClick={() => {
                         setActiveItemId(item.id);
-                        setView("workspace");
+                        setView("editor");
                       }}
                       className="p-4 bg-surface-container-low hover:bg-surface-container border border-outline-variant/15 hover:border-primary/40 rounded flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer transition-all duration-150 group"
                     >
@@ -724,14 +771,9 @@ export default function App() {
                 </div>
               ) : (
                 /* Empty list State */
-                <div className="py-24 border border-dashed border-outline-variant/10 rounded-lg text-center max-w-md mx-auto space-y-4">
-                  <Inbox className="w-12 h-12 stroke-[1] text-on-surface-variant/30 mx-auto" />
-                  <div>
-                    <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">No workspace items here</h3>
-                    <p className="text-[11px] text-on-surface-variant/60 mt-1 leading-relaxed">
-                      This collection view is currently empty. Tap below to capture a new thought opportunity or adjust your filters.
-                    </p>
-                  </div>
+                <EmptyState 
+                  type={currentView === "archive" ? "archive" : currentView === "ideas" ? "ideas" : "collections"}
+                >
                   <button 
                     onClick={() => handleCreateItem("Idea")}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/95 text-on-primary rounded text-[10px] font-label-caps tracking-wider transition-all shadow"
@@ -739,11 +781,13 @@ export default function App() {
                     <Plus className="w-3.5 h-3.5" />
                     <span>CREATE NEW IDEA</span>
                   </button>
-                </div>
+                </EmptyState>
               )}
 
-            </div>
+              </div>
+            </PageTransition>
           )}
+          </AnimatePresence>
         </div>
 
         {/* Floating AI Co-Pilot control deck (displayed when editing an item) */}
@@ -835,18 +879,23 @@ export default function App() {
         onApplyImprovement={handleApplyCoPilotImprovement}
       />
 
-      {/* COMMAND PALETTE MODAL (⌘K) */}
-      <CommandPalette
-        isOpen={commandPaletteOpen}
+      {/* Modals & Overlays */}
+      <CommandPalette 
+        isOpen={commandPaletteOpen} 
         onClose={() => setCommandPaletteOpen(false)}
         items={items}
         onSelectItem={(id) => {
           setActiveItemId(id);
-          setView("workspace");
+          setView("editor");
         }}
-        onCreateItem={(type) => { handleCreateItem(type); }}
+        onCreateItem={(type) => handleCreateItem(type)}
         toggleTheme={toggleTheme}
         theme={theme}
+      />
+      
+      <ShortcutCheatsheet
+        isOpen={cheatsheetOpen}
+        onClose={() => setCheatsheetOpen(false)}
       />
 
     </div>

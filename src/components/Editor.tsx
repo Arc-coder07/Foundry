@@ -18,6 +18,8 @@ import {
 import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard } from "../types";
 import { AttachmentsPanel } from "./AttachmentsPanel";
 import { MoodboardView } from "./MoodboardView";
+import InlineMarkdownEditor from "./InlineMarkdownEditor";
+import { LinkedMilestones } from "./LinkedMilestones";
 
 interface EditorProps {
   item: WorkspaceItem;
@@ -26,6 +28,10 @@ interface EditorProps {
   onDelete: (id: string) => void;
   onSwitchItem: (id: string) => void;
   isSyncing: boolean;
+  milestones: Milestone[];
+  onCreateMilestone: (milestone: Omit<Milestone, 'id'>) => void;
+  onUpdateMilestone: (milestone: Milestone) => void;
+  onDeleteMilestone: (id: string) => void;
 }
 
 export function Editor({
@@ -34,7 +40,11 @@ export function Editor({
   onUpdate,
   onDelete,
   onSwitchItem,
-  isSyncing
+  isSyncing,
+  milestones,
+  onCreateMilestone,
+  onUpdateMilestone,
+  onDeleteMilestone
 }: EditorProps) {
   // Local state for interactive editing to allow snappy inputs before debouncing / saving
   const [title, setTitle] = useState(item.title);
@@ -42,6 +52,10 @@ export function Editor({
   const [problem, setProblem] = useState(item.problem || "");
   const [solution, setSolution] = useState(item.proposedSolution || "");
   const [uniqueInsight, setUniqueInsight] = useState(item.uniqueInsight || "");
+  const [targetAudience, setTargetAudience] = useState(item.targetAudience || "");
+  const [validationHypothesis, setValidationHypothesis] = useState(item.validationHypothesis || "");
+  const [businessModel, setBusinessModel] = useState(item.businessModel || "");
+  const [technicalChallenges, setTechnicalChallenges] = useState(item.technicalChallenges || "");
   const [mvpText, setMvpText] = useState("");
   const [newDecisionTitle, setNewDecisionTitle] = useState("");
   const [newTimelineText, setNewTimelineText] = useState("");
@@ -59,7 +73,12 @@ export function Editor({
     setProblem(item.problem || "");
     setSolution(item.proposedSolution || "");
     setUniqueInsight(item.uniqueInsight || "");
-    setSelectedLinkItemId("");
+    setTargetAudience(item.targetAudience || "");
+    setValidationHypothesis(item.validationHypothesis || "");
+    setBusinessModel(item.businessModel || "");
+    setTechnicalChallenges(item.technicalChallenges || "");
+    setMvpText("");
+    setNewDecisionTitle("");
     setEditorTab('canvas');
   }, [item.id]);
 
@@ -244,6 +263,15 @@ export function Editor({
             </span>
           )}
         </button>
+        <div className="flex-1"></div>
+        {/* Auto-save indicator */}
+        <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-text-muted transition-all duration-300">
+          {isSyncing ? (
+            <span className="flex items-center gap-1.5 opacity-80"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> Saving...</span>
+          ) : (
+            <span className="flex items-center gap-1.5 opacity-40"><span className="w-1.5 h-1.5 rounded-full bg-green-500/50"></span> Saved to disk</span>
+          )}
+        </div>
       </div>
 
       {/* Moodboard Tab */}
@@ -301,27 +329,23 @@ export function Editor({
         </section>
 
         {/* Problem */}
-        <section className="space-y-4">
-          <h3 className="font-mono text-xs text-on-surface tracking-widest uppercase border-b border-outline-variant pb-2.5 w-fit font-bold">The Problem</h3>
-          <textarea
+        <section className="space-y-1">
+          <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold mb-2 block">The Problem</label>
+          <InlineMarkdownEditor
             value={problem}
-            onChange={(e) => setProblem(e.target.value)}
+            onChange={setProblem}
             onBlur={() => triggerUpdate({ problem }, item.id)}
-            rows={4}
-            className="w-full bg-transparent border-none text-on-surface/90 text-sm md:text-base leading-relaxed outline-none resize-none placeholder-on-surface-variant/30"
             placeholder="What friction exists in the status quo? Why does this matter? Detail the core user trauma..."
           />
         </section>
 
         {/* Solution */}
-        <section className="space-y-4">
-          <h3 className="font-mono text-xs text-on-surface tracking-widest uppercase border-b border-outline-variant pb-2.5 w-fit font-bold">The Solution</h3>
-          <textarea
+        <section className="space-y-1">
+          <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold mb-2 block">The Solution</label>
+          <InlineMarkdownEditor
             value={solution}
-            onChange={(e) => setSolution(e.target.value)}
+            onChange={setSolution}
             onBlur={() => triggerUpdate({ proposedSolution: solution }, item.id)}
-            rows={4}
-            className="w-full bg-transparent border-none text-on-surface/90 text-sm md:text-base leading-relaxed outline-none resize-none placeholder-on-surface-variant/30"
             placeholder="How does your protocol or product solve this? Keep it technical, elegant, and definitive..."
           />
         </section>
@@ -331,21 +355,20 @@ export function Editor({
           <div className="absolute top-0 right-0 p-5 opacity-35">
             <Sparkles className="w-5 h-5 text-on-surface" />
           </div>
-          <h3 className="font-mono text-[10px] text-text-muted mb-3.5 uppercase tracking-widest font-bold">Unique Insight</h3>
-          <textarea
+          <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold mb-2 block">Unique Insight</label>
+          <InlineMarkdownEditor
             value={uniqueInsight}
-            onChange={(e) => setUniqueInsight(e.target.value)}
+            onChange={setUniqueInsight}
             onBlur={() => triggerUpdate({ uniqueInsight }, item.id)}
-            rows={4}
-            className="w-full bg-transparent border-none text-on-surface text-base md:text-lg font-light italic leading-relaxed outline-none resize-none placeholder-on-surface-variant/30"
+            className="font-light italic"
             placeholder="What secret do you know that competitors ignore? Hardware isn't the bottleneck..."
           />
         </section>
 
         {/* MVP Requirements Checklist */}
         <section className="space-y-5">
-          <div className="flex items-center justify-between border-b border-outline-variant pb-2.5">
-            <h3 className="font-mono text-xs text-on-surface tracking-widest uppercase w-fit font-bold">MVP Requirements</h3>
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold mb-2 block">MVP Requirements</label>
             <span className="font-mono text-[10px] text-text-muted uppercase">
               {parsedMvpList.filter(p => p.checked).length} / {parsedMvpList.length} Complete
             </span>
@@ -400,51 +423,62 @@ export function Editor({
           </form>
         </section>
 
+        {/* Linked Milestones Section */}
+        <section className="space-y-6 pt-6 border-t border-outline-variant">
+          <LinkedMilestones
+            itemId={item.id}
+            milestones={milestones}
+            onCreateMilestone={onCreateMilestone}
+            onUpdateMilestone={onUpdateMilestone}
+            onDeleteMilestone={onDeleteMilestone}
+          />
+        </section>
+
         {/* Structured Questions Expansion Accordion */}
         <section className="space-y-6 pt-6 border-t border-outline-variant">
           <h4 className="font-mono text-[10px] text-text-muted uppercase tracking-widest font-bold">Supplemental Architecture & Strategy</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold">Target Audience</label>
-              <textarea
-                value={item.targetAudience || ""}
-                onChange={(e) => triggerUpdate({ targetAudience: e.target.value })}
-                rows={3}
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 resize-none transition-colors"
+              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold block">Target Audience</label>
+              <InlineMarkdownEditor
+                value={targetAudience}
+                onChange={setTargetAudience}
+                onBlur={() => triggerUpdate({ targetAudience })}
+                minRows={3}
                 placeholder="IoT developers, systems researchers..."
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold">Validation Hypothesis</label>
-              <textarea
-                value={item.validationHypothesis || ""}
-                onChange={(e) => triggerUpdate({ validationHypothesis: e.target.value })}
-                rows={3}
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 resize-none transition-colors"
+              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold block">Validation Hypothesis</label>
+              <InlineMarkdownEditor
+                value={validationHypothesis}
+                onChange={setValidationHypothesis}
+                onBlur={() => triggerUpdate({ validationHypothesis })}
+                minRows={3}
                 placeholder="By clustering Raspberry Pis..."
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold">Business Model & Commissions</label>
-              <textarea
-                value={item.businessModel || ""}
-                onChange={(e) => triggerUpdate({ businessModel: e.target.value })}
-                rows={3}
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 resize-none transition-colors"
+              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold block">Business Model & Commissions</label>
+              <InlineMarkdownEditor
+                value={businessModel}
+                onChange={setBusinessModel}
+                onBlur={() => triggerUpdate({ businessModel })}
+                minRows={3}
                 placeholder="Network commission on computational leases..."
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold">Technical Challenges & Vulnerabilities</label>
-              <textarea
-                value={item.technicalChallenges || ""}
-                onChange={(e) => triggerUpdate({ technicalChallenges: e.target.value })}
-                rows={3}
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 resize-none transition-colors"
+              <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider font-semibold block">Technical Challenges & Vulnerabilities</label>
+              <InlineMarkdownEditor
+                value={technicalChallenges}
+                onChange={setTechnicalChallenges}
+                onBlur={() => triggerUpdate({ technicalChallenges })}
+                minRows={3}
                 placeholder="Sandboxing multi-tenant WASM execution..."
               />
             </div>
