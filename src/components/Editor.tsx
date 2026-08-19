@@ -13,13 +13,15 @@ import {
   Sparkles,
   Link as LinkIcon,
   PenTool,
-  Palette
+  Palette,
+  Cpu
 } from "lucide-react";
 import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard } from "../types";
 import { AttachmentsPanel } from "./AttachmentsPanel";
 import { MoodboardView } from "./MoodboardView";
 import InlineMarkdownEditor from "./InlineMarkdownEditor";
 import { LinkedMilestones } from "./LinkedMilestones";
+import { AgentTracePanel } from "./AgentTracePanel";
 
 interface EditorProps {
   item: WorkspaceItem;
@@ -63,8 +65,8 @@ export function Editor({
   // Link item selector
   const [selectedLinkItemId, setSelectedLinkItemId] = useState("");
 
-  // Editor tab state: 'canvas' (default editor) or 'moodboard'
-  const [editorTab, setEditorTab] = useState<'canvas' | 'moodboard'>('canvas');
+  // Editor tab state: 'canvas' (default editor), 'moodboard', or 'trace'
+  const [editorTab, setEditorTab] = useState<'canvas' | 'moodboard' | 'trace'>('canvas');
 
   // Sync state with item when item changes
   useEffect(() => {
@@ -263,6 +265,28 @@ export function Editor({
             </span>
           )}
         </button>
+        <button
+          onClick={() => setEditorTab('trace')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border-b-2 -mb-px ${
+            editorTab === 'trace'
+              ? 'text-primary border-primary'
+              : 'text-text-muted border-transparent hover:text-on-surface hover:border-outline-variant/40'
+          }`}
+        >
+          <Cpu className="w-3.5 h-3.5" />
+          Agent Trace
+          {item.agentStatus === 'running' && (
+            <span className="flex items-center gap-1 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 animate-pulse">
+              <span className="w-1 h-1 rounded-full bg-primary" />
+              LIVE
+            </span>
+          )}
+          {item.agentStatus !== 'running' && (item.agentTrace || []).length > 0 && (
+            <span className="text-[9px] font-mono text-text-muted bg-surface-container border border-outline-variant px-1.5 py-0.5 rounded">
+              {(item.agentTrace || []).filter(e => e.type === 'tool_call').length}
+            </span>
+          )}
+        </button>
         <div className="flex-1"></div>
         {/* Auto-save indicator */}
         <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-text-muted transition-all duration-300">
@@ -281,6 +305,13 @@ export function Editor({
           onCardAdded={handleMoodboardCardAdded}
           onCardUpdated={handleMoodboardCardUpdated}
           onCardDeleted={handleMoodboardCardDeleted}
+        />
+      ) : editorTab === 'trace' ? (
+        /* Agent Trace Tab */
+        <AgentTracePanel
+          trace={item.agentTrace || []}
+          agentStatus={item.agentStatus}
+          agentTokens={item.agentTokens}
         />
       ) : (
 

@@ -1,7 +1,9 @@
 import os
 import sys
+import time
 import logging
 import httpx
+from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig, types
@@ -33,25 +35,103 @@ class AgentRequest(BaseModel):
     target_audience: str
     prompt: str = ""
     progress_url: str
+    trace_url: str = ""
     mcp_servers: list[McpServerEntry] = []
 
 # Web Research and SWOT analysis logic
 async def run_research_and_swot(request_data: AgentRequest) -> str:
     
+    # Mutable list to collect trace events during the agent run
+    trace_events: list[dict] = []
+    # Track start times for tool calls to calculate duration
+    tool_start_times: dict[str, float] = {}
+    
     @hooks.pre_tool_call_decide
     async def report_telemetry(tool_call: types.ToolCall) -> types.HookResult:
         tool_name = tool_call.name
-        message = f"Agent thinking: Investigating via {tool_name}..."
+        event_id = f"trace-{int(time.time() * 1000)}"
         
+        # Record start time for duration calculation
+        tool_start_times[event_id] = time.time()
+        
+        # Build the trace event
+        tool_args = {}
+        if hasattr(tool_call, 'args') and tool_call.args:
+            try:
+                # Serialize args, truncating very large values
+                for k, v in tool_call.args.items():
+                    str_v = str(v)
+                    tool_args[k] = str_v[:500] if len(str_v) > 500 else str_v
+            except Exception:
+                tool_args = {"raw": str(tool_call.args)[:500]}
+        
+        event = {
+            "id": event_id,
+            "timestamp": datetime.now().isoformat(),
+            "type": "tool_call",
+            "content": f"Calling {tool_name}",
+            "toolName": tool_name,
+            "toolArgs": tool_args,
+        }
+        trace_events.append(event)
+        
+        # Send live progress + trace event
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
+                # Progress update
                 await client.post(request_data.progress_url, json={
                     "item_id": request_data.item_id,
-                    "progress": message
+                    "progress": f"Agent thinking: Investigating via {tool_name}..."
                 })
+                # Trace event update (if trace_url is provided)
+                if request_data.trace_url:
+                    await client.post(request_data.trace_url, json={
+                        "item_id": request_data.item_id,
+                        "trace_event": event
+                    })
         except Exception as e:
             logger.warning(f"Could not send telemetry update: {e}")
             
+        return types.HookResult(allow=True)
+
+    @hooks.post_tool_call
+    async def capture_tool_result(tool_call: types.ToolCall, result) -> types.HookResult:
+        event_id = f"trace-result-{int(time.time() * 1000)}"
+        
+        # Calculate duration from the most recent tool_call event
+        duration_ms = None
+        # Find the matching pre-call event to calculate duration
+        for tid, start_time in list(tool_start_times.items()):
+            duration_ms = int((time.time() - start_time) * 1000)
+            del tool_start_times[tid]
+            break
+        
+        # Truncate result for storage
+        result_str = str(result) if result else "No output"
+        if len(result_str) > 3000:
+            result_str = result_str[:3000] + "\n... [truncated]"
+        
+        event = {
+            "id": event_id,
+            "timestamp": datetime.now().isoformat(),
+            "type": "tool_result",
+            "content": result_str,
+            "toolName": tool_call.name,
+            "durationMs": duration_ms,
+        }
+        trace_events.append(event)
+        
+        # Send live trace event
+        try:
+            if request_data.trace_url:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    await client.post(request_data.trace_url, json={
+                        "item_id": request_data.item_id,
+                        "trace_event": event
+                    })
+        except Exception as e:
+            logger.warning(f"Could not send trace result update: {e}")
+        
         return types.HookResult(allow=True)
 
     # Path to the Foundry MCP server
@@ -115,7 +195,7 @@ async def run_research_and_swot(request_data: AgentRequest) -> str:
     
     # Enable Web Search, URL Reading, and all MCP tools
     config = LocalAgentConfig(
-        hooks=[report_telemetry],
+        hooks=[report_telemetry, capture_tool_result],
         capabilities=CapabilitiesConfig(
             enabled_tools=[
                 types.BuiltinTools.SEARCH_WEB,
@@ -159,6 +239,14 @@ Please perform the following steps:
             response = await agent.chat(agent_prompt)
             content = await response.text()
             
+            # Add a final_response trace event
+            trace_events.append({
+                "id": f"trace-final-{int(time.time() * 1000)}",
+                "timestamp": datetime.now().isoformat(),
+                "type": "final_response",
+                "content": "Agent completed research and generated final report.",
+            })
+            
             usage = agent.conversation.total_usage
             usage_dict = None
             if usage:
@@ -168,7 +256,14 @@ Please perform the following steps:
                     "total": usage.total_token_count
                 }
                 
-            return content, usage_dict
+            return content, usage_dict, trace_events
     except Exception as e:
         logger.error(f"Agent execution failed: {e}")
-        return f"### Research Failed\n\nThe agent encountered an unexpected error:\n```\n{e}\n```\nPlease ensure your API limits are sufficient and try again.", None
+        trace_events.append({
+            "id": f"trace-error-{int(time.time() * 1000)}",
+            "timestamp": datetime.now().isoformat(),
+            "type": "error",
+            "content": str(e),
+        })
+        return f"### Research Failed\n\nThe agent encountered an unexpected error:\n```\n{e}\n```\nPlease ensure your API limits are sufficient and try again.", None, trace_events
+

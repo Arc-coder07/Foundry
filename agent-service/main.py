@@ -26,6 +26,7 @@ class ResearchJob(BaseModel):
     prompt: str = ""
     callback_url: str
     progress_url: str
+    trace_url: str = ""
     mcp_servers: list[dict] = []
 
 async def process_research_job(job: ResearchJob):
@@ -50,6 +51,7 @@ async def process_research_job(job: ResearchJob):
             target_audience=job.target_audience,
             prompt=job.prompt,
             progress_url=job.progress_url,
+            trace_url=job.trace_url,
             mcp_servers=mcp_entries
         )
         
@@ -64,7 +66,7 @@ async def process_research_job(job: ResearchJob):
             logger.warning(f"Could not send progress update: {e}")
 
         # Run the agent
-        result_markdown, usage = await run_research_and_swot(request_data)
+        result_markdown, usage, trace_events = await run_research_and_swot(request_data)
         
         logger.info(f"Research complete for {job.item_id}, sending callback")
         
@@ -77,6 +79,8 @@ async def process_research_job(job: ResearchJob):
             }
             if usage:
                 payload["usage"] = usage
+            if trace_events:
+                payload["trace"] = trace_events
                 
             await client.post(job.callback_url, json=payload)
             

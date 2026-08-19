@@ -36,6 +36,16 @@ export interface MoodboardCard {
   createdAt: string;
 }
 
+export interface AgentTraceEvent {
+  id: string;
+  timestamp: string;
+  type: 'thought' | 'tool_call' | 'tool_result' | 'final_response' | 'error';
+  content: string;
+  toolName?: string;
+  toolArgs?: Record<string, any>;
+  durationMs?: number;
+}
+
 export interface CopilotGeneration {
   id: string;
   timestamp: string;
@@ -92,6 +102,7 @@ export interface WorkspaceItem {
     candidate: number;
     total: number;
   };
+  agentTrace?: AgentTraceEvent[];
 }
 
 export interface AISuggestionResponse {
