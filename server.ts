@@ -639,12 +639,14 @@ app.post("/api/antigravity/research", async (req, res) => {
     // We need to pass the IP the Python service can reach. For local dev, 127.0.0.1 is fine.
     const callbackUrl = `http://127.0.0.1:${PORT}/api/antigravity/callback`;
     const progressUrl = `http://127.0.0.1:${PORT}/api/antigravity/progress`;
+    const traceUrl = `http://127.0.0.1:${PORT}/api/antigravity/trace`;
     
     // Set status to running
     const index = items.findIndex(i => i.id === itemId);
     if (index !== -1) {
       items[index].agentStatus = 'running';
       items[index].agentProgress = 'Initializing Agent...';
+      items[index].agentTrace = [];
       items[index].updatedAt = new Date().toISOString();
       writeDatabase(items);
     }
@@ -663,6 +665,7 @@ app.post("/api/antigravity/research", async (req, res) => {
         prompt: prompt || "",
         callback_url: callbackUrl,
         progress_url: progressUrl,
+        trace_url: traceUrl,
         mcp_servers: mcpServers || []
       })
     });
@@ -690,7 +693,7 @@ app.post("/api/antigravity/research", async (req, res) => {
 
 // Callback from Python service
 app.post("/api/antigravity/callback", async (req, res) => {
-  const { item_id, status, result, error, usage } = req.body;
+  const { item_id, status, result, error, usage, trace } = req.body;
   
   if (status === "completed") {
     // Add result as an attachment to the item
@@ -720,6 +723,9 @@ app.post("/api/antigravity/callback", async (req, res) => {
       if (usage) {
         items[index].agentTokens = usage;
       }
+      if (trace) {
+        items[index].agentTrace = trace;
+      }
       writeDatabase(items);
       
       console.log(`Agent research saved for item ${item_id}`);
@@ -735,9 +741,28 @@ app.post("/api/antigravity/callback", async (req, res) => {
       if (usage) {
         items[index].agentTokens = usage;
       }
+      if (trace) {
+        items[index].agentTrace = trace;
+      }
       writeDatabase(items);
     }
     console.error(`Agent failed for item ${item_id}: ${error}`);
+  }
+  
+  res.json({ success: true });
+});
+
+// Live trace event from Python service
+app.post("/api/antigravity/trace", async (req, res) => {
+  const { item_id, trace_event } = req.body;
+  const items = readDatabase();
+  const index = items.findIndex(i => i.id === item_id);
+  
+  if (index !== -1 && trace_event) {
+    if (!items[index].agentTrace) items[index].agentTrace = [];
+    items[index].agentTrace.push(trace_event);
+    items[index].updatedAt = new Date().toISOString();
+    writeDatabase(items);
   }
   
   res.json({ success: true });
