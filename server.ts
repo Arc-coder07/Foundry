@@ -623,6 +623,215 @@ User's instruction/request:
   }
 });
 
+// --- Snapshot Version Control API ---
+
+// Create manual snapshot
+app.post("/api/items/:id/snapshots", (req, res) => {
+  const { label } = req.body;
+  const items = readDatabase();
+  const index = items.findIndex(i => i.id === req.params.id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: "Item not found" });
+  }
+  
+  const item = items[index];
+  const newSnapshotId = `snap-${Date.now()}`;
+  
+  const snapshot: any = {
+    id: newSnapshotId,
+    parentSnapshotId: item.activeSnapshotId || null,
+    itemId: item.id,
+    label: label || "Manual Snapshot",
+    createdAt: new Date().toISOString(),
+    createdBy: 'user',
+    data: {
+      title: item.title,
+      summary: item.summary,
+      problem: item.problem,
+      proposedSolution: item.proposedSolution,
+      uniqueInsight: item.uniqueInsight,
+      targetAudience: item.targetAudience,
+      validationHypothesis: item.validationHypothesis,
+      mvp: item.mvp,
+      businessModel: item.businessModel,
+      technicalChallenges: item.technicalChallenges,
+    }
+  };
+  
+  if (!items[index].snapshots) items[index].snapshots = [];
+  items[index].snapshots.push(snapshot);
+  items[index].activeSnapshotId = newSnapshotId;
+  items[index].updatedAt = new Date().toISOString();
+  writeDatabase(items);
+  
+  res.json(snapshot);
+});
+
+// Restore snapshot
+app.post("/api/items/:id/snapshots/:snapshotId/restore", (req, res) => {
+  const items = readDatabase();
+  const index = items.findIndex(i => i.id === req.params.id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: "Item not found" });
+  }
+  
+  const item = items[index];
+  const snapshot = (item.snapshots || []).find((s: any) => s.id === req.params.snapshotId);
+  
+  if (!snapshot) {
+    return res.status(404).json({ error: "Snapshot not found" });
+  }
+  
+  // Restore fields
+  items[index] = {
+    ...item,
+    title: snapshot.data.title,
+    summary: snapshot.data.summary,
+    problem: snapshot.data.problem,
+    proposedSolution: snapshot.data.proposedSolution,
+    uniqueInsight: snapshot.data.uniqueInsight,
+    targetAudience: snapshot.data.targetAudience,
+    validationHypothesis: snapshot.data.validationHypothesis,
+    mvp: snapshot.data.mvp,
+    businessModel: snapshot.data.businessModel,
+    technicalChallenges: snapshot.data.technicalChallenges,
+    activeSnapshotId: snapshot.id,
+    updatedAt: new Date().toISOString()
+  };
+  
+  writeDatabase(items);
+  res.json(items[index]);
+});
+
+// AI Pivot
+app.post("/api/items/:id/snapshots/pivot", async (req, res) => {
+  const { pivotPrompt } = req.body;
+  const items = readDatabase();
+  const index = items.findIndex(i => i.id === req.params.id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: "Item not found" });
+  }
+  
+  if (!ai) {
+    return res.status(400).json({ error: "Gemini API key is missing." });
+  }
+
+  const item = items[index];
+  
+  // Create a base snapshot of current state BEFORE pivot if there isn't an active one
+  if (!item.activeSnapshotId) {
+    const baseSnap = {
+      id: `snap-base-${Date.now()}`,
+      parentSnapshotId: null,
+      itemId: item.id,
+      label: "Base Version",
+      createdAt: new Date().toISOString(),
+      createdBy: 'user',
+      data: {
+        title: item.title,
+        summary: item.summary,
+        problem: item.problem,
+        proposedSolution: item.proposedSolution,
+        uniqueInsight: item.uniqueInsight,
+        targetAudience: item.targetAudience,
+        validationHypothesis: item.validationHypothesis,
+        mvp: item.mvp,
+        businessModel: item.businessModel,
+        technicalChallenges: item.technicalChallenges,
+      }
+    };
+    if (!items[index].snapshots) items[index].snapshots = [];
+    items[index].snapshots.push(baseSnap);
+    items[index].activeSnapshotId = baseSnap.id;
+  }
+
+  try {
+    const prompt = `
+You are an expert product strategist. Your task is to pivot the current product concept into a new direction based on the user's instructions.
+
+Original Concept:
+Title: ${item.title}
+Summary: ${item.summary}
+Problem: ${item.problem}
+Solution: ${item.proposedSolution}
+Insight: ${item.uniqueInsight}
+Target Audience: ${item.targetAudience}
+Business Model: ${item.businessModel}
+
+Pivot Instruction:
+"${pivotPrompt}"
+
+Return the entire pivoted product concept as a JSON object matching this schema exactly. DO NOT use markdown code blocks, just raw JSON text.
+{
+  "title": "...",
+  "summary": "...",
+  "problem": "...",
+  "proposedSolution": "...",
+  "uniqueInsight": "...",
+  "targetAudience": "...",
+  "validationHypothesis": "...",
+  "mvp": "...",
+  "businessModel": "...",
+  "technicalChallenges": "..."
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+      config: {
+        temperature: 0.7,
+        responseMimeType: "application/json"
+      }
+    });
+
+    const aiText = response.text;
+    const pivotedData = JSON.parse(aiText);
+    
+    const pivotSnapshotId = `snap-pivot-${Date.now()}`;
+    const pivotSnapshot: any = {
+      id: pivotSnapshotId,
+      parentSnapshotId: items[index].activeSnapshotId,
+      itemId: item.id,
+      label: `Pivot: ${pivotPrompt.slice(0, 30)}...`,
+      createdAt: new Date().toISOString(),
+      createdBy: 'ai',
+      aiPrompt: pivotPrompt,
+      data: {
+        title: pivotedData.title || item.title,
+        summary: pivotedData.summary || item.summary,
+        problem: pivotedData.problem || item.problem,
+        proposedSolution: pivotedData.proposedSolution || item.proposedSolution,
+        uniqueInsight: pivotedData.uniqueInsight || item.uniqueInsight,
+        targetAudience: pivotedData.targetAudience || item.targetAudience,
+        validationHypothesis: pivotedData.validationHypothesis || item.validationHypothesis,
+        mvp: pivotedData.mvp || item.mvp,
+        businessModel: pivotedData.businessModel || item.businessModel,
+        technicalChallenges: pivotedData.technicalChallenges || item.technicalChallenges,
+      }
+    };
+    
+    // Apply pivot data to main item immediately
+    items[index] = {
+      ...items[index],
+      ...pivotSnapshot.data,
+      activeSnapshotId: pivotSnapshotId,
+      updatedAt: new Date().toISOString()
+    };
+    
+    items[index].snapshots.push(pivotSnapshot);
+    writeDatabase(items);
+    
+    res.json(items[index]);
+  } catch (error: any) {
+    console.error("AI Pivot error:", error);
+    res.status(500).json({ error: "Failed to perform AI pivot." });
+  }
+});
+
 // Antigravity Agent Trigger Endpoint
 app.post("/api/antigravity/research", async (req, res) => {
   const { itemId, prompt, mcpServers } = req.body;

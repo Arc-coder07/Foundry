@@ -46,6 +46,28 @@ export interface AgentTraceEvent {
   durationMs?: number;
 }
 
+export interface IdeaSnapshot {
+  id: string;
+  parentSnapshotId: string | null;
+  itemId: string;
+  label: string;
+  createdAt: string;
+  createdBy: 'user' | 'ai';
+  aiPrompt?: string;
+  data: {
+    title: string;
+    summary: string;
+    problem: string;
+    proposedSolution: string;
+    uniqueInsight: string;
+    targetAudience: string;
+    validationHypothesis: string;
+    mvp: string;
+    businessModel: string;
+    technicalChallenges: string;
+  };
+}
+
 export interface CopilotGeneration {
   id: string;
   timestamp: string;
@@ -103,6 +125,8 @@ export interface WorkspaceItem {
     total: number;
   };
   agentTrace?: AgentTraceEvent[];
+  snapshots?: IdeaSnapshot[];
+  activeSnapshotId?: string | null;
 }
 
 export interface AISuggestionResponse {

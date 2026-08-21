@@ -14,7 +14,8 @@ import {
   Link as LinkIcon,
   PenTool,
   Palette,
-  Cpu
+  Cpu,
+  GitBranch
 } from "lucide-react";
 import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard } from "../types";
 import { AttachmentsPanel } from "./AttachmentsPanel";
@@ -22,6 +23,7 @@ import { MoodboardView } from "./MoodboardView";
 import InlineMarkdownEditor from "./InlineMarkdownEditor";
 import { LinkedMilestones } from "./LinkedMilestones";
 import { AgentTracePanel } from "./AgentTracePanel";
+import { IdeaVersionTree } from "./IdeaVersionTree";
 
 interface EditorProps {
   item: WorkspaceItem;
@@ -65,8 +67,8 @@ export function Editor({
   // Link item selector
   const [selectedLinkItemId, setSelectedLinkItemId] = useState("");
 
-  // Editor tab state: 'canvas' (default editor), 'moodboard', or 'trace'
-  const [editorTab, setEditorTab] = useState<'canvas' | 'moodboard' | 'trace'>('canvas');
+  // Editor tab state: 'canvas', 'moodboard', 'trace', or 'versions'
+  const [editorTab, setEditorTab] = useState<'canvas' | 'moodboard' | 'trace' | 'versions'>('canvas');
 
   // Sync state with item when item changes
   useEffect(() => {
@@ -233,6 +235,62 @@ export function Editor({
     onUpdate(updated);
   };
 
+  // Snapshot / Version Control Callbacks
+  const handleCreateSnapshot = async (label: string) => {
+    try {
+      const res = await fetch(`/api/items/${item.id}/snapshots`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label })
+      });
+      if (res.ok) {
+        const snapshot = await res.json();
+        const updated = {
+          ...item,
+          snapshots: [...(item.snapshots || []), snapshot],
+          activeSnapshotId: snapshot.id
+        };
+        onUpdate(updated);
+      }
+    } catch (err) {
+      console.error("Failed to create snapshot", err);
+    }
+  };
+
+  const handleRestoreSnapshot = async (snapshotId: string) => {
+    try {
+      const res = await fetch(`/api/items/${item.id}/snapshots/${snapshotId}/restore`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        const updatedItem = await res.json();
+        onUpdate(updatedItem);
+      }
+    } catch (err) {
+      console.error("Failed to restore snapshot", err);
+    }
+  };
+
+  const handlePivotSnapshot = async (prompt: string) => {
+    try {
+      const res = await fetch(`/api/items/${item.id}/snapshots/pivot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pivotPrompt: prompt })
+      });
+      if (res.ok) {
+        const updatedItem = await res.json();
+        onUpdate(updatedItem);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to pivot snapshot");
+      }
+    } catch (err) {
+      console.error("Failed to pivot snapshot", err);
+      alert("Error generating AI pivot");
+    }
+  };
+
   return (
     <div className="max-w-[1150px] mx-auto select-text pb-24">
 
@@ -287,6 +345,22 @@ export function Editor({
             </span>
           )}
         </button>
+        <button
+          onClick={() => setEditorTab('versions')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border-b-2 -mb-px ${
+            editorTab === 'versions'
+              ? 'text-primary border-primary'
+              : 'text-text-muted border-transparent hover:text-on-surface hover:border-outline-variant/40'
+          }`}
+        >
+          <GitBranch className="w-3.5 h-3.5" />
+          Versions
+          {(item.snapshots || []).length > 0 && (
+            <span className="text-[9px] font-mono text-text-muted bg-surface-container border border-outline-variant px-1.5 py-0.5 rounded">
+              {(item.snapshots || []).length}
+            </span>
+          )}
+        </button>
         <div className="flex-1"></div>
         {/* Auto-save indicator */}
         <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-text-muted transition-all duration-300">
@@ -312,6 +386,15 @@ export function Editor({
           trace={item.agentTrace || []}
           agentStatus={item.agentStatus}
           agentTokens={item.agentTokens}
+        />
+      ) : editorTab === 'versions' ? (
+        /* Versions / Branching Tab */
+        <IdeaVersionTree
+          item={item}
+          onRestore={handleRestoreSnapshot}
+          onPivot={handlePivotSnapshot}
+          onCreateSnapshot={handleCreateSnapshot}
+          isSyncing={isSyncing}
         />
       ) : (
 
