@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import multer from "multer";
 import dotenv from "dotenv";
 import { WorkspaceItem, TimelineEntry, DecisionEntry, AttachmentEntry, MoodboardCard, Milestone } from "./src/types";
+import { llmRouter, LLMProviderConfig, PROVIDER_PRESETS } from "./server/llm-router";
 
 // Load environment variables early
 dotenv.config();
@@ -28,6 +29,29 @@ app.use(express.json());
 
 // Path to persist JSON database
 const DB_DIR = path.join(process.cwd(), "data");
+const LLM_PROVIDERS_FILE = path.join(DB_DIR, "llm-providers.json");
+
+// ─── LLM Router Initialization ─────────────────────────────
+function loadLLMProviders(): LLMProviderConfig[] {
+  try {
+    if (fs.existsSync(LLM_PROVIDERS_FILE)) {
+      return JSON.parse(fs.readFileSync(LLM_PROVIDERS_FILE, "utf-8"));
+    }
+  } catch (e) {
+    console.warn("[LLM Router] Could not load provider configs:", e);
+  }
+  return [];
+}
+
+function saveLLMProviders(providers: LLMProviderConfig[]): void {
+  if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+  fs.writeFileSync(LLM_PROVIDERS_FILE, JSON.stringify(providers, null, 2));
+}
+
+// Load saved providers and ensure Gemini from .env is always available
+const savedProviders = loadLLMProviders();
+llmRouter.loadProviders(savedProviders);
+llmRouter.ensureGeminiFromEnv();
 const DB_FILE = path.join(DB_DIR, "db.json");
 const ATTACHMENTS_DIR = path.join(DB_DIR, "attachments");
 const MOODBOARD_DIR = path.join(DB_DIR, "moodboard");
@@ -513,6 +537,71 @@ app.get("/api/stats", (req, res) => {
   });
 });
 
+// ─── LLM Provider API ──────────────────────────────────────
+
+// Get available provider presets
+app.get("/api/llm/presets", (_req, res) => {
+  res.json(PROVIDER_PRESETS);
+});
+
+// Get current provider configs
+app.get("/api/llm/providers", (_req, res) => {
+  const providers = loadLLMProviders();
+  // Mask API keys for security
+  const masked = providers.map(p => ({
+    ...p,
+    apiKey: p.apiKey ? `${p.apiKey.slice(0, 4)}...${p.apiKey.slice(-4)}` : '',
+  }));
+  res.json(masked);
+});
+
+// Save provider configs (full replacement)
+app.put("/api/llm/providers", (req, res) => {
+  const providers: LLMProviderConfig[] = req.body.providers;
+  if (!Array.isArray(providers)) {
+    return res.status(400).json({ error: "providers must be an array" });
+  }
+  saveLLMProviders(providers);
+  llmRouter.loadProviders(providers);
+  llmRouter.ensureGeminiFromEnv();
+  res.json({ success: true, count: providers.length });
+});
+
+// Add/update a single provider
+app.post("/api/llm/providers", (req, res) => {
+  const provider: LLMProviderConfig = req.body;
+  if (!provider.id || !provider.name) {
+    return res.status(400).json({ error: "Provider must have id and name" });
+  }
+
+  const providers = loadLLMProviders();
+  const existingIdx = providers.findIndex(p => p.id === provider.id);
+  if (existingIdx !== -1) {
+    providers[existingIdx] = provider;
+  } else {
+    providers.push(provider);
+  }
+
+  saveLLMProviders(providers);
+  llmRouter.loadProviders(providers);
+  llmRouter.ensureGeminiFromEnv();
+  res.json({ success: true, provider: { ...provider, apiKey: '***' } });
+});
+
+// Delete a provider
+app.delete("/api/llm/providers/:id", (req, res) => {
+  const providers = loadLLMProviders().filter(p => p.id !== req.params.id);
+  saveLLMProviders(providers);
+  llmRouter.loadProviders(providers);
+  llmRouter.ensureGeminiFromEnv();
+  res.json({ success: true });
+});
+
+// Get usage stats
+app.get("/api/llm/usage", (_req, res) => {
+  res.json(llmRouter.getUsageStats());
+});
+
 // Co-Pilot AI Assist Endpoint
 app.post("/api/copilot", async (req, res) => {
   const { itemId, action, customPrompt } = req.body;
@@ -523,9 +612,9 @@ app.post("/api/copilot", async (req, res) => {
     return res.status(404).json({ error: "Workspace Item not found" });
   }
 
-  if (!ai) {
+  if (!llmRouter.hasProviders()) {
     return res.status(400).json({ 
-      error: "Gemini API key is missing. Please configure GEMINI_API_KEY inside Settings > Secrets." 
+      error: "No LLM providers configured. Please add at least one provider in Settings > LLM Providers." 
     });
   }
 
@@ -606,20 +695,19 @@ User's instruction/request:
 `;
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-        temperature: 0.2
-      }
+    const response = await llmRouter.chat({
+      messages: [
+        { role: 'system', content: systemInstruction },
+        { role: 'user', content: prompt },
+      ],
+      task: 'copilot',
+      temperature: 0.2,
     });
 
-    const aiText = response.text || "No response received from Gemini.";
-    res.json({ content: aiText });
+    res.json({ content: response.content, provider: response.provider, model: response.model, latencyMs: response.latencyMs });
   } catch (error: any) {
-    console.error("Gemini Co-Pilot error:", error);
-    res.status(500).json({ error: error.message || "An error occurred while communicating with the Gemini API." });
+    console.error("Co-Pilot error:", error);
+    res.status(500).json({ error: error.message || "An error occurred while communicating with the LLM." });
   }
 });
 
@@ -715,15 +803,15 @@ app.post("/api/items/:id/snapshots/pivot", async (req, res) => {
     return res.status(404).json({ error: "Item not found" });
   }
   
-  if (!ai) {
-    return res.status(400).json({ error: "Gemini API key is missing." });
+  if (!llmRouter.hasProviders()) {
+    return res.status(400).json({ error: "No LLM providers configured." });
   }
 
   const item = items[index];
   
   // Create a base snapshot of current state BEFORE pivot if there isn't an active one
   if (!item.activeSnapshotId) {
-    const baseSnap = {
+    const baseSnap: any = {
       id: `snap-base-${Date.now()}`,
       parentSnapshotId: null,
       itemId: item.id,
@@ -779,16 +867,16 @@ Return the entire pivoted product concept as a JSON object matching this schema 
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-      config: {
-        temperature: 0.7,
-        responseMimeType: "application/json"
-      }
+    const response = await llmRouter.chat({
+      messages: [
+        { role: 'user', content: prompt },
+      ],
+      task: 'pivot',
+      responseFormat: 'json',
+      temperature: 0.7,
     });
 
-    const aiText = response.text;
+    const aiText = response.content;
     const pivotedData = JSON.parse(aiText);
     
     const pivotSnapshotId = `snap-pivot-${Date.now()}`;

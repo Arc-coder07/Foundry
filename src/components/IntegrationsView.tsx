@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Settings
 } from "lucide-react";
+import { LLMProviderSettings } from "./LLMProviderSettings";
 
 // A curated catalog of popular MCP servers
 const MCP_CATALOG = [
@@ -215,6 +216,14 @@ export function IntegrationsView({ onBack }: IntegrationsViewProps) {
             CUSTOM SERVER
           </button>
         </div>
+      </div>
+
+      {/* LLM Provider Settings */}
+      <LLMProviderSettings />
+
+      {/* Divider */}
+      <div className="border-t border-outline-variant/30 pt-2">
+        <p className="text-[10px] font-mono text-text-muted uppercase tracking-widest font-bold">MCP Tool Servers</p>
       </div>
 
       {/* Foundry Built-in MCP Server Card */}
