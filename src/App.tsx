@@ -44,6 +44,7 @@ export default function App() {
   const [coPilotLoading, setCoPilotLoading] = useState(false);
   const [coPilotContent, setCoPilotContent] = useState<string | null>(null);
   const [coPilotError, setCoPilotError] = useState<string | null>(null);
+  const [coPilotProviderInfo, setCoPilotProviderInfo] = useState<{ provider?: string; model?: string; latencyMs?: number } | null>(null);
   
   // Theme setting
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -335,6 +336,7 @@ export default function App() {
     setCoPilotLoading(true);
     setCoPilotContent(null);
     setCoPilotError(null);
+    setCoPilotProviderInfo(null);
 
     try {
       const res = await fetch("/api/copilot", {
@@ -346,7 +348,9 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setCoPilotContent(data.content);
-        
+        if (data.provider || data.model) {
+          setCoPilotProviderInfo({ provider: data.provider, model: data.model, latencyMs: data.latencyMs });
+        }
         const activeItem = items.find(i => i.id === activeItemId);
         if (activeItem) {
           const newGeneration = {
@@ -378,29 +382,13 @@ export default function App() {
   const handleTriggerAgent = async () => {
     if (!activeItemId) return;
     try {
-      // Read enabled MCP servers from localStorage
-      const savedServers = localStorage.getItem("foundry-mcp-servers");
-      const allServers = savedServers ? JSON.parse(savedServers) : [];
-      const enabledServers = allServers
-        .filter((s: any) => s.enabled)
-        .map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          type: s.type || "stdio",
-          command: s.command || null,
-          args: s.args || null,
-          url: s.url || null,
-          api_token: s.apiToken || null,
-          env_key: s.envKey || null,
-        }));
-
+      // MCP servers are now loaded server-side from data/mcp-servers.json
       const res = await fetch("/api/antigravity/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           itemId: activeItemId, 
-          prompt: "Please research this idea and perform a SWOT analysis.",
-          mcpServers: enabledServers
+          prompt: "Please research this idea and perform a SWOT analysis."
         })
       });
       
@@ -871,6 +859,7 @@ export default function App() {
         isLoading={coPilotLoading}
         content={coPilotContent}
         error={coPilotError}
+        providerInfo={coPilotProviderInfo}
         generations={items.find(i => i.id === activeItemId)?.copilotGenerations || []}
         onSelectGeneration={(gen) => {
           setCoPilotAction(gen.action as any);

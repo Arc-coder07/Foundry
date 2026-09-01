@@ -11,6 +11,7 @@ interface CoPilotDrawerProps {
   isLoading: boolean;
   content: string | null;
   error: string | null;
+  providerInfo?: { provider?: string; model?: string; latencyMs?: number } | null;
   onApplyImprovement: (improvedText: string) => void;
   generations?: CopilotGeneration[];
   onSelectGeneration?: (gen: CopilotGeneration) => void;
@@ -23,6 +24,7 @@ export function CoPilotDrawer({
   isLoading,
   content,
   error,
+  providerInfo,
   onApplyImprovement,
   generations = [],
   onSelectGeneration
@@ -167,6 +169,17 @@ export function CoPilotDrawer({
             /* Analysis Completed State */
             <div className="prose max-w-none text-on-surface/95 leading-relaxed">
               <Markdown content={content} />
+              {/* Provider Info Badge */}
+              {providerInfo && (providerInfo.provider || providerInfo.model) && (
+                <div className="mt-4 pt-3 border-t border-outline-variant/30 flex items-center gap-2">
+                  <Zap className="w-3 h-3 text-primary/60" />
+                  <span className="text-[9px] font-mono text-text-muted">
+                    {providerInfo.provider && <span className="text-primary/80 font-bold">{providerInfo.provider}</span>}
+                    {providerInfo.model && <span> · {providerInfo.model}</span>}
+                    {providerInfo.latencyMs && <span> · {(providerInfo.latencyMs / 1000).toFixed(1)}s</span>}
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center text-text-muted/60 py-12">

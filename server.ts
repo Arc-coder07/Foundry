@@ -30,6 +30,7 @@ app.use(express.json());
 // Path to persist JSON database
 const DB_DIR = path.join(process.cwd(), "data");
 const LLM_PROVIDERS_FILE = path.join(DB_DIR, "llm-providers.json");
+const MCP_SERVERS_FILE = path.join(DB_DIR, "mcp-servers.json");
 
 // ─── LLM Router Initialization ─────────────────────────────
 function loadLLMProviders(): LLMProviderConfig[] {
@@ -602,6 +603,103 @@ app.get("/api/llm/usage", (_req, res) => {
   res.json(llmRouter.getUsageStats());
 });
 
+// ─── MCP Server Config API ─────────────────────────────────
+
+interface McpServerConfig {
+  id: string;
+  name: string;
+  description: string;
+  type: "stdio" | "http";
+  command?: string;
+  args?: string;
+  url?: string;
+  envKey?: string;
+  apiToken?: string;
+  enabled: boolean;
+  icon?: string;
+  category?: string;
+}
+
+function loadMcpServers(): McpServerConfig[] {
+  try {
+    if (fs.existsSync(MCP_SERVERS_FILE)) {
+      return JSON.parse(fs.readFileSync(MCP_SERVERS_FILE, "utf-8"));
+    }
+  } catch (e) {
+    console.warn("[MCP] Could not load server configs:", e);
+  }
+  return [];
+}
+
+function saveMcpServers(servers: McpServerConfig[]): void {
+  if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+  fs.writeFileSync(MCP_SERVERS_FILE, JSON.stringify(servers, null, 2));
+}
+
+// Get all MCP servers (tokens masked)
+app.get("/api/mcp/servers", (_req, res) => {
+  const servers = loadMcpServers();
+  const masked = servers.map(s => ({
+    ...s,
+    apiToken: s.apiToken ? `${s.apiToken.slice(0, 4)}...${s.apiToken.slice(-4)}` : '',
+  }));
+  res.json(masked);
+});
+
+// Get all MCP servers with FULL tokens (internal only — used by agent trigger)
+app.get("/api/mcp/servers/internal", (_req, res) => {
+  res.json(loadMcpServers());
+});
+
+// Save all MCP servers (full replacement)
+app.put("/api/mcp/servers", (req, res) => {
+  const servers: McpServerConfig[] = req.body.servers;
+  if (!Array.isArray(servers)) {
+    return res.status(400).json({ error: "servers must be an array" });
+  }
+  saveMcpServers(servers);
+  res.json({ success: true, count: servers.length });
+});
+
+// Add or update a single MCP server
+app.post("/api/mcp/servers", (req, res) => {
+  const server: McpServerConfig = req.body;
+  if (!server.id || !server.name) {
+    return res.status(400).json({ error: "Server must have id and name" });
+  }
+
+  const servers = loadMcpServers();
+  const existingIdx = servers.findIndex(s => s.id === server.id);
+  if (existingIdx !== -1) {
+    servers[existingIdx] = server;
+  } else {
+    servers.push(server);
+  }
+
+  saveMcpServers(servers);
+  res.json({ success: true, server: { ...server, apiToken: server.apiToken ? '***' : '' } });
+});
+
+// Delete an MCP server
+app.delete("/api/mcp/servers/:id", (req, res) => {
+  const servers = loadMcpServers().filter(s => s.id !== req.params.id);
+  saveMcpServers(servers);
+  res.json({ success: true });
+});
+
+// Check agent service health (real ping, not fake)
+app.get("/api/mcp/status", async (_req, res) => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const resp = await fetch("http://localhost:8000/docs", { signal: controller.signal });
+    clearTimeout(timeout);
+    res.json({ status: resp.ok ? "online" : "offline" });
+  } catch {
+    res.json({ status: "offline" });
+  }
+});
+
 // Co-Pilot AI Assist Endpoint
 app.post("/api/copilot", async (req, res) => {
   const { itemId, action, customPrompt } = req.body;
@@ -922,7 +1020,7 @@ Return the entire pivoted product concept as a JSON object matching this schema 
 
 // Antigravity Agent Trigger Endpoint
 app.post("/api/antigravity/research", async (req, res) => {
-  const { itemId, prompt, mcpServers } = req.body;
+  const { itemId, prompt } = req.body;
   const items = readDatabase();
   const item = items.find(i => i.id === itemId);
 
@@ -948,6 +1046,21 @@ app.post("/api/antigravity/research", async (req, res) => {
       writeDatabase(items);
     }
     
+    // Load enabled MCP servers from backend config (not from frontend)
+    const allMcpServers = loadMcpServers();
+    const enabledMcpServers = allMcpServers
+      .filter(s => s.enabled)
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        type: s.type || "stdio",
+        command: s.command || null,
+        args: s.args || null,
+        url: s.url || null,
+        api_token: s.apiToken || null,
+        env_key: s.envKey || null,
+      }));
+
     const response = await fetch(pythonServiceUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -963,7 +1076,7 @@ app.post("/api/antigravity/research", async (req, res) => {
         callback_url: callbackUrl,
         progress_url: progressUrl,
         trace_url: traceUrl,
-        mcp_servers: mcpServers || []
+        mcp_servers: enabledMcpServers
       })
     });
     
