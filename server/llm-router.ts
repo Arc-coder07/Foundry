@@ -119,6 +119,16 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPD: 99999,
     capabilities: ['chat', 'json'],
     icon: 'Server',
+  },
+  {
+    id: 'omniroute',
+    name: 'OmniRoute',
+    baseUrl: 'http://localhost:20128/v1',
+    defaultModel: 'openai/gpt-4o-mini',
+    maxRPM: 60,
+    maxRPD: 10000,
+    capabilities: ['chat', 'json'],
+    icon: 'Network',
   }
 ];
 
