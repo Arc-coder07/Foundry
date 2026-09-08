@@ -33,7 +33,7 @@ export interface LLMProviderConfig {
 
 export interface LLMRequest {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
-  task: 'copilot' | 'pivot' | 'research' | 'wireframe' | 'interview' | 'general';
+  task: 'copilot' | 'pivot' | 'research' | 'wireframe' | 'interview' | 'voice-parse' | 'general';
   responseFormat?: 'text' | 'json';
   temperature?: number;
   maxTokens?: number;
@@ -68,7 +68,7 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPM: 30,
     maxRPD: 1500,
     capabilities: ['chat', 'json', 'vision', 'image_gen'],
-    icon: '✦',
+    icon: 'Sparkles',
   },
   {
     id: 'groq',
@@ -78,7 +78,7 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPM: 30,
     maxRPD: 1000,
     capabilities: ['chat', 'json'],
-    icon: '⚡',
+    icon: 'Zap',
   },
   {
     id: 'mistral',
@@ -88,7 +88,7 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPM: 60,
     maxRPD: 10000,
     capabilities: ['chat', 'json'],
-    icon: '🌊',
+    icon: 'Waves',
   },
   {
     id: 'cerebras',
@@ -98,7 +98,7 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPM: 30,
     maxRPD: 1000,
     capabilities: ['chat', 'json'],
-    icon: '🧠',
+    icon: 'Brain',
   },
   {
     id: 'openrouter',
@@ -108,7 +108,7 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPM: 20,
     maxRPD: 50,
     capabilities: ['chat', 'json', 'vision'],
-    icon: '🔀',
+    icon: 'Shuffle',
   },
   {
     id: 'ollama',
@@ -118,8 +118,8 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
     maxRPM: 999,
     maxRPD: 99999,
     capabilities: ['chat', 'json'],
-    icon: '🦙',
-  },
+    icon: 'Server',
+  }
 ];
 
 // ─── LLM Router Class ─────────────────────────────────────────

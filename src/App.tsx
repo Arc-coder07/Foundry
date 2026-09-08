@@ -798,17 +798,17 @@ export default function App() {
               <button 
                 onClick={() => handleTriggerCoPilot("audit")}
                 className="px-3.5 py-1.5 hover:bg-surface-container rounded-full transition-all text-text-muted hover:text-primary font-label-caps text-[10px] flex items-center gap-2 cursor-pointer font-bold"
-                title="Identify assumptions, blindspots and architectural weaknesses"
+                title="Identify technical edge cases and simulate engineering objections"
               >
-                <span>AUDIT</span>
+                <span>DEVIL'S ADVOCATE (AUDIT)</span>
               </button>
               
               <button 
                 onClick={() => handleTriggerCoPilot("expand")}
                 className="px-3.5 py-1.5 hover:bg-surface-container rounded-full transition-all text-text-muted hover:text-primary font-label-caps text-[10px] flex items-center gap-2 cursor-pointer font-bold"
-                title="Suggest MVP limits, technical blocks, roadmaps, complexity scoring"
+                title="Generate dev-ready spec: User Stories, Data Model, API Endpoints, Edge Cases"
               >
-                <span>EXPAND</span>
+                <span>DEV SPEC</span>
               </button>
 
               <button 

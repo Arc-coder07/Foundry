@@ -700,6 +700,93 @@ app.get("/api/mcp/status", async (_req, res) => {
   }
 });
 
+// ─── Voice-to-Idea Parsing ─────────────────────────────────
+
+app.post("/api/voice/parse", async (req, res) => {
+  const { transcript, itemId } = req.body;
+
+  if (!transcript || typeof transcript !== "string" || transcript.trim().length < 10) {
+    return res.status(400).json({ error: "Transcript must be at least 10 characters." });
+  }
+
+  if (!llmRouter.hasProviders()) {
+    return res.status(400).json({ 
+      error: "No LLM providers configured. Please add at least one provider in Settings > LLM Providers." 
+    });
+  }
+
+  try {
+    const systemInstruction = `You are a structured note parser for a product development tool called Foundry. 
+Your job is to take a messy, stream-of-consciousness voice transcript from a founder and extract structured product fields from it.
+
+You MUST respond with ONLY valid JSON (no markdown, no code fences, no explanation). The JSON schema is:
+{
+  "title": "A crisp 3-8 word product name or concept title",
+  "summary": "A 1-2 sentence elevator pitch extracted from their rambling",
+  "problem": "The core problem they described (clean it up, keep their intent)",
+  "proposedSolution": "Their proposed solution (structured from their raw thoughts)", 
+  "targetAudience": "Who this is for (extract from context clues if not explicitly stated)",
+  "uniqueInsight": "The non-obvious insight or angle they mentioned (if any, otherwise empty string)"
+}
+
+Rules:
+- Extract the founder's ACTUAL ideas — do not invent new ones
+- Clean up grammar and remove filler words (um, uh, like, you know)
+- If a field has no clear content in the transcript, use an empty string ""
+- Keep their voice and intent — just structure it
+- The title should be catchy but accurate to what they described`;
+
+    const response = await llmRouter.chat({
+      messages: [
+        { role: 'system', content: systemInstruction },
+        { role: 'user', content: `Here is the raw voice transcript to parse:\n\n"${transcript}"` },
+      ],
+      task: 'voice-parse',
+      temperature: 0.1,
+    });
+
+    // Parse the JSON response
+    let parsed;
+    try {
+      // Strip any markdown code fences if the LLM wraps it
+      let cleaned = response.content.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+      }
+      parsed = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error("[Voice Parse] Failed to parse LLM response as JSON:", response.content);
+      return res.status(500).json({ error: "Failed to structure the transcript. Please try again." });
+    }
+
+    // If itemId is provided, auto-update the item
+    if (itemId) {
+      const items = readDatabase();
+      const index = items.findIndex(i => i.id === itemId);
+      if (index !== -1) {
+        if (parsed.title) items[index].title = parsed.title;
+        if (parsed.summary) items[index].summary = parsed.summary;
+        if (parsed.problem) items[index].problem = parsed.problem;
+        if (parsed.proposedSolution) items[index].proposedSolution = parsed.proposedSolution;
+        if (parsed.targetAudience) items[index].targetAudience = parsed.targetAudience;
+        if (parsed.uniqueInsight) items[index].uniqueInsight = parsed.uniqueInsight;
+        items[index].updatedAt = new Date().toISOString();
+        writeDatabase(items);
+      }
+    }
+
+    res.json({ 
+      fields: parsed, 
+      provider: response.provider, 
+      model: response.model, 
+      latencyMs: response.latencyMs 
+    });
+  } catch (error: any) {
+    console.error("[Voice Parse] Error:", error);
+    res.status(500).json({ error: error.message || "Failed to parse voice transcript." });
+  }
+});
+
 // Co-Pilot AI Assist Endpoint
 app.post("/api/copilot", async (req, res) => {
   const { itemId, action, customPrompt } = req.body;
@@ -736,7 +823,7 @@ Analyze this proposal and return an improved version of the core sections. Provi
 ### Optimized Proposed Solution
 `;
     } else if (action === "audit") {
-      systemInstruction = "You are a critical, brilliant venture capitalist and Staff Engineer. Your job is to perform a rigorous SWOT analysis and find critical weaknesses, assumptions, and friction points in this product proposal. Be direct, crisp, and objective. Offer concrete mitigation strategies.";
+      systemInstruction = "You are a brutally honest skeptical CTO and lead engineer. You've seen hundreds of products fail. Your job is NOT to validate — it's to find the fatal flaws, hidden complexity, and unspoken assumptions that will kill this project. You care about the founder and want them to succeed, which is why you're harsh. No cheerleading, no 'great idea!' — only hard truths and concrete actions.";
       prompt = `
 Workspace Item details:
 Title: ${item.title}
@@ -746,16 +833,28 @@ Solution: ${item.proposedSolution}
 Unique Insight: ${item.uniqueInsight}
 Target Audience: ${item.targetAudience}
 
-Please perform a strategic audit on this item. Structure your feedback in clear sections using Markdown:
-### 🔴 Critical Vulnerabilities & Blindspots
-List 2-3 severe risks or unverified assumptions in their thinking.
-### 🟡 Operational & Technical Hardships
-What makes this exceptionally difficult to build or distribute?
-### 🟢 Mitigating Recommendations
-Concrete, realistic pivot paths or validation experiments to reduce risk.
+Tear this apart. Structure your response:
+
+### 🔴 What Will Break on Day 1?
+List 3-5 specific technical edge cases, race conditions, or failure modes that the founder hasn't thought about. Be concrete — "When user X does Y, the system will Z."
+
+### 🟡 Why Will Users Churn After Week 1?
+Identify the UX friction points, onboarding gaps, and retention killers. What will frustrate real users enough to abandon this product?
+
+### ⚫ What's the Hardest Problem You're Ignoring?
+What is the single most technically or operationally difficult thing in this project that the founder is hand-waving over? Explain why it's 10x harder than they think.
+
+### 🔵 What Would a Lead Engineer Push Back On?
+If you brought this spec to a staff engineer, what 3 questions would they immediately ask that you can't answer yet?
+
+### 🟢 5 Mom-Test Questions to Ask Real Users
+Generate 5 specific questions the founder should ask real potential users BEFORE writing any code. Follow the Mom Test methodology — no leading questions, no hypotheticals. Focus on extracting past behavior and active workarounds:
+- "When was the last time you [experienced this problem]?"
+- "What do you currently do to solve [this]?"
+- "How much time/money do you spend on [workaround]?"
 `;
     } else if (action === "expand") {
-      systemInstruction = "You are a world-class Product Architect, Tech Lead, and Business Strategist. Your job is to expand an early-stage workspace item into full technical architecture, MVP boundaries, a phased roadmap, a clear business model, and estimated technical complexity.";
+      systemInstruction = "You are an elite Staff Engineer and Product Architect. Your job is to transform a raw product idea into a shipping-ready engineering specification. You think like a senior developer who needs to hand this to a junior dev and have them start coding immediately. Be concrete, specific, and opinionated. No business fluff — only buildable artifacts.";
       prompt = `
 Workspace Item details:
 Title: ${item.title}
@@ -765,17 +864,33 @@ Solution: ${item.proposedSolution}
 Unique Insight: ${item.uniqueInsight}
 Target Audience: ${item.targetAudience}
 
-Please expand this idea into a robust build strategy. Return beautiful, organized markdown sections:
-### 🎯 Defined MVP boundaries & Feature Scope
-What should be in the initial release vs later phases?
-### 🏗️ Proposed Technical Architecture
-Which standards, design patterns, or system block diagrams fit this best?
-### 🗓️ Phased Implementation Roadmap
-Provide a 3-stage plan (Stage 1: Core foundation, Stage 2: Integration, Stage 3: Scale).
-### 💰 Monetization & Value Capture
-Recommend a strong monetization model.
-### ⚡ Technical Complexity Estimation
-Score complexity from 1 to 10 (with detailed rationale).
+Transform this idea into a shipping-ready dev spec. Return structured markdown:
+
+### 🎯 MVP Boundary
+What's in v1 (ship in 2 weeks) vs. what's deferred. Be ruthless — cut everything non-essential.
+
+### 📋 User Stories
+Write 5-8 core user stories in this format:
+**US-1:** As a [user type], I want to [action], so that [outcome].
+  - **Acceptance Criteria:**
+    - Given [context], When [action], Then [expected result]
+    - Given [context], When [edge case], Then [fallback behavior]
+
+### 🗃️ Data Model
+Define the core entities, their fields (name, type, required/optional), and relationships. Use a simple table format.
+
+### 🔌 API Endpoints
+List the key endpoints:
+| Method | Path | Description | Request Body | Response |
+For each endpoint, specify the happy path and primary error cases.
+
+### ⚠️ Edge Cases & Error States
+List 5-8 specific things that WILL break if you don't handle them. Be concrete:
+- "What happens when [specific scenario]?"
+- "What if the user [unexpected behavior]?"
+
+### 🏗️ Technical Decisions
+Recommend specific tech choices (framework, DB, auth, hosting) with 1-sentence rationale for each.
 `;
     } else {
       // Custom prompt

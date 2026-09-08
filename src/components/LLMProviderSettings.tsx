@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Shield,
   Activity,
+  HelpCircle
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
 interface LLMProviderConfig {
   id: string;
@@ -193,8 +195,12 @@ export function LLMProviderSettings() {
             <div className="flex items-center gap-4">
               <div className="flex gap-3">
                 {Object.entries(usage).map(([id, u]) => (
-                  <span key={id} className="text-[10px] font-mono text-text-muted">
-                    {u.icon} {u.rpd}
+                  <span key={id} className="text-[10px] font-mono text-text-muted flex items-center gap-1">
+                    {(() => {
+                      const Icon = (LucideIcons as any)[u.icon] || HelpCircle;
+                      return <Icon className="w-3 h-3" />;
+                    })()}
+                    {u.rpd}
                   </span>
                 ))}
               </div>
@@ -207,7 +213,10 @@ export function LLMProviderSettings() {
               {Object.entries(usage).map(([id, u]) => (
                 <div key={id} className="bg-surface-container rounded-lg p-3 border border-outline-variant/30">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-base">{u.icon}</span>
+                    {(() => {
+                      const Icon = (LucideIcons as any)[u.icon] || HelpCircle;
+                      return <Icon className="w-4 h-4" />;
+                    })()}
                     <span className="text-[10px] font-mono font-bold text-on-surface">{u.name}</span>
                   </div>
                   <div className="space-y-1">
@@ -246,7 +255,10 @@ export function LLMProviderSettings() {
                   disabled={saving}
                   className="flex items-center gap-3 p-3 bg-surface-container hover:bg-surface-container-high border border-outline-variant rounded-lg cursor-pointer transition-colors text-left disabled:opacity-50"
                 >
-                  <span className="text-xl">{preset.icon}</span>
+                  {(() => {
+                    const Icon = (LucideIcons as any)[preset.icon] || HelpCircle;
+                    return <Icon className="w-5 h-5 text-on-surface" />;
+                  })()}
                   <div>
                     <p className="text-xs font-bold text-on-surface">{preset.name}</p>
                     <p className="text-[9px] font-mono text-text-muted">{preset.defaultModel}</p>
@@ -286,7 +298,10 @@ export function LLMProviderSettings() {
                 </div>
 
                 {/* Icon & Info */}
-                <span className="text-xl">{provider.icon}</span>
+                {(() => {
+                  const Icon = (LucideIcons as any)[provider.icon] || HelpCircle;
+                  return <Icon className="w-5 h-5 text-on-surface" />;
+                })()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-xs font-bold text-on-surface">{provider.name}</p>

@@ -41,16 +41,16 @@ export function CoPilotDrawer({
       "Assembling optimized proposal drafts..."
     ],
     audit: [
-      "Isolating product hypotheses and dependencies...",
-      "Cross-referencing with common failure modes...",
-      "Auditing distribution and operational friction barriers...",
-      "Formulating strategic risk-mitigation vectors..."
+      "Channeling your most skeptical CTO...",
+      "Identifying what will break on day 1...",
+      "Simulating lead engineer pushback...",
+      "Generating Mom-Test questions for real validation..."
     ],
     expand: [
-      "Analyzing architectural scope parameters...",
-      "Mapping feature modularity into decoupled components...",
-      "Drafting developmental roadmaps and timeline phases...",
-      "Assembling monetization models and complexity scoring..."
+      "Defining ruthless MVP boundaries...",
+      "Writing user stories with acceptance criteria...",
+      "Designing data model and API endpoints...",
+      "Cataloguing edge cases and error states..."
     ]
   };
 
@@ -227,7 +227,7 @@ export function CoPilotDrawer({
                 onClick={() => onApplyImprovement(content)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:opacity-90 rounded-lg text-xs font-mono tracking-wider transition-all shadow-md group cursor-pointer font-bold"
               >
-                <span>APPLY EXPANSION</span>
+                <span>SAVE DEV SPEC</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </button>
             )}
@@ -238,7 +238,7 @@ export function CoPilotDrawer({
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white hover:opacity-90 rounded-lg text-xs font-mono tracking-wider transition-all shadow-md group cursor-pointer font-bold"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>APPLY AUDIT</span>
+                <span>SAVE AUDIT</span>
               </button>
             )}
           </div>

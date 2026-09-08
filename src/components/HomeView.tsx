@@ -14,7 +14,13 @@ import {
   Target,
   TrendingUp,
   Cpu,
-  Workflow
+  Workflow,
+  Mic,
+  FileText,
+  ShieldAlert,
+  Send,
+  Code,
+  ChevronDown
 } from "lucide-react";
 import { WorkspaceItem } from "../types";
 import EmptyState from "./EmptyState";
@@ -47,9 +53,9 @@ export function HomeView({
 
     const initialData: Partial<WorkspaceItem> = {
       title: qTitle.trim(),
-      summary: qSummary.trim() || "A newly captured product hypothesis.",
-      problem: qProblem.trim() || "Unspecified friction points waiting to be structured.",
-      uniqueInsight: qInsight.trim() || "Early stage concept awaiting technical auditing.",
+      summary: qSummary.trim() || "A raw brain dump ready to be expanded into a dev spec.",
+      problem: qProblem.trim() || "What's the pain? Who has it? How are they solving it today?",
+      uniqueInsight: qInsight.trim() || "Hit Expand to generate user stories and acceptance criteria.",
       collection: "AI",
       tags: ["RAW", "SEED"]
     };
@@ -73,30 +79,58 @@ export function HomeView({
         <div className="relative z-10 text-center space-y-6 py-20 px-4 md:py-28 md:px-8">
           <div className="flex justify-center mb-2">
             <span className="px-3.5 py-1.5 rounded-full bg-surface-container/60 backdrop-blur-md border border-outline-variant text-text-muted font-mono text-[9px] tracking-widest uppercase">
-              Product Thinking Operating System
+              Brain dump → Dev spec → Ship
             </span>
           </div>
           <h1 className="font-display text-4xl md:text-[56px] text-on-surface leading-[1.1] tracking-tight font-medium max-w-2xl mx-auto drop-shadow-sm">
-            "I want to think <span className="italic font-serif opacity-50">here</span>."
+            Idea to <span className="italic font-serif opacity-50">first commit</span> faster.
           </h1>
           <p className="text-sm md:text-base text-on-surface/90 max-w-xl mx-auto leading-relaxed drop-shadow-sm">
-            Foundry is the first place you visit whenever an idea is born. Overcome ambiguity, audit technical assumptions, and orchestrate buildable products.
+            Capture a messy thought by voice or text. AI structures it into a dev-ready spec with user stories, acceptance criteria, and edge cases. Push to Linear or GitHub and start coding.
           </p>
         </div>
       </section>
 
-      {/* Instant 60-Second Capture Console */}
+      {/* How It Works — Core Pipeline */}
+      <section className="space-y-6">
+        <div className="text-center">
+          <h2 className="font-label-caps text-xs text-on-surface uppercase tracking-widest font-semibold">How It Works</h2>
+          <p className="text-xs text-text-muted mt-1.5">Every step gets you closer to your first commit. Nothing else.</p>
+        </div>
+        <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-1.5">
+          {[
+            { icon: <Mic className="w-5 h-5" />, label: "Voice / Text", desc: "Brain dump" },
+            { icon: <FileText className="w-5 h-5" />, label: "Expand", desc: "User stories & spec" },
+            { icon: <ShieldAlert className="w-5 h-5" />, label: "Devil's Advocate", desc: "Edge cases & objections" },
+            { icon: <Send className="w-5 h-5" />, label: "Push", desc: "Linear / GitHub Issues" },
+            { icon: <Code className="w-5 h-5" />, label: "Build", desc: "Start coding" },
+          ].map((step, idx, arr) => (
+            <div key={idx} className="flex items-center gap-1.5">
+              <div className="flex flex-col items-center text-center w-[130px] p-4 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container transition-colors">
+                <div className="text-on-surface mb-2">{step.icon}</div>
+                <span className="text-[10px] font-mono font-bold text-on-surface uppercase tracking-wider">{step.label}</span>
+                <span className="text-[10px] text-text-muted mt-0.5">{step.desc}</span>
+              </div>
+              {idx < arr.length - 1 && (
+                <ChevronDown className="w-4 h-4 text-text-muted md:rotate-[-90deg] flex-shrink-0" />
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Brain Dump Console */}
       <section className="bg-surface-container-low border border-outline-variant rounded-xl p-8 md:p-10 shadow-xl space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-on-surface animate-pulse" />
-            <h3 className="font-label-caps text-xs text-on-surface uppercase tracking-widest">Quick Capture Idea</h3>
+            <h3 className="font-label-caps text-xs text-on-surface uppercase tracking-widest">Brain Dump</h3>
           </div>
           <button 
             onClick={() => setShowQuickAdd(!showQuickAdd)}
             className="text-on-surface hover:opacity-85 text-xs font-mono tracking-wider underline underline-offset-4 font-semibold"
           >
-            {showQuickAdd ? "HIDE INTERFACE" : "EXPAND CONSOLE (60s)"}
+            {showQuickAdd ? "HIDE INTERFACE" : "START DUMP (60s)"}
           </button>
         </div>
 
@@ -109,7 +143,7 @@ export function HomeView({
                 required
                 value={qTitle}
                 onChange={(e) => setQTitle(e.target.value)}
-                placeholder="Autonomous edge router..."
+                placeholder="e.g. Expense tracker for freelancers..."
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors"
               />
             </div>
@@ -126,7 +160,7 @@ export function HomeView({
                 value={qSummary}
                 onChange={(e) => setQSummary(e.target.value)}
                 rows={1}
-                placeholder="An API proxy routing task vectors dynamically..."
+                placeholder="Snap receipts, auto-categorize, export to accountant..."
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors resize-none overflow-hidden"
               />
             </div>
@@ -137,7 +171,7 @@ export function HomeView({
                 value={qProblem}
                 onChange={(e) => setQProblem(e.target.value)}
                 rows={3}
-                placeholder="Centralized systems introduce latency and fragile routing..."
+                placeholder="Freelancers lose receipts, hate manual spreadsheets, miss tax deductions..."
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 resize-none transition-colors"
               />
             </div>
@@ -148,7 +182,7 @@ export function HomeView({
                 type="text"
                 value={qInsight}
                 onChange={(e) => setQInsight(e.target.value)}
-                placeholder="Routing paths can be predicted via semantics in under 12ms..."
+                placeholder="OCR + bank feed matching can auto-categorize 90% of expenses..."
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors"
               />
             </div>
@@ -158,7 +192,7 @@ export function HomeView({
                 type="submit"
                 className="flex items-center gap-2 px-5 py-3 bg-primary text-on-primary hover:opacity-90 rounded-lg text-xs font-mono font-bold tracking-wider transition-all shadow cursor-pointer"
               >
-                <span>PERSIST THOUGHT</span>
+                <span>CAPTURE & STRUCTURE</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -168,16 +202,16 @@ export function HomeView({
             onClick={() => setShowQuickAdd(true)}
             className="border border-dashed border-outline-variant rounded-lg py-8 text-center hover:bg-surface-container transition-all cursor-pointer text-text-muted hover:text-on-surface text-xs font-mono tracking-wide"
           >
-            + TAP TO LOG NEW IDEA IN UNDER 60 SECONDS
+            + DUMP A RAW THOUGHT — 60 SECONDS
           </div>
         )}
       </section>
 
-      {/* Continue Thinking (Recent Items List) */}
+      {/* Pick Up Where You Left Off (Recent Items List) */}
       <section className="space-y-6">
         <div className="flex items-center gap-2.5 border-b border-outline-variant pb-3">
           <Clock className="w-4 h-4 text-on-surface opacity-60" />
-          <h2 className="font-label-caps text-xs text-on-surface uppercase tracking-widest font-semibold">Continue Thinking</h2>
+          <h2 className="font-label-caps text-xs text-on-surface uppercase tracking-widest font-semibold">Pick Up Where You Left Off</h2>
         </div>
 
         {recentItems.length > 0 ? (
@@ -194,7 +228,7 @@ export function HomeView({
                       {item.type}
                     </span>
                     <span className="text-[10px] font-mono text-text-muted">
-                      {item.confidence || "50%"} CONF
+                      {item.confidence ? `${item.confidence} READY` : "DRAFT"}
                     </span>
                   </div>
                   <h4 className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">

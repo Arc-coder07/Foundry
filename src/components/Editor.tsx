@@ -24,6 +24,7 @@ import InlineMarkdownEditor from "./InlineMarkdownEditor";
 import { LinkedMilestones } from "./LinkedMilestones";
 import { AgentTracePanel } from "./AgentTracePanel";
 import { IdeaVersionTree } from "./IdeaVersionTree";
+import { VoiceCapture } from "./VoiceCapture";
 
 interface EditorProps {
   item: WorkspaceItem;
@@ -421,6 +422,35 @@ export function Editor({
               (click text to edit, changes auto-sync)
             </span>
           </div>
+        </section>
+
+        {/* Voice Capture */}
+        <section className="p-4 bg-surface-container-low/50 border border-outline-variant/50 rounded-xl">
+          <div className="text-[10px] font-mono tracking-widest text-on-surface uppercase mb-3 font-bold flex items-center gap-2">
+            🎙️ Voice Capture
+            <span className="text-text-muted font-normal normal-case tracking-normal">— ramble about your idea, AI structures it</span>
+          </div>
+          <VoiceCapture
+            itemId={item.id}
+            onParsed={(fields) => {
+              // Update local state with parsed fields
+              if (fields.title) setTitle(fields.title);
+              if (fields.summary) setSummary(fields.summary);
+              if (fields.problem) setProblem(fields.problem);
+              if (fields.proposedSolution) setSolution(fields.proposedSolution);
+              if (fields.targetAudience) setTargetAudience(fields.targetAudience);
+              if (fields.uniqueInsight) setUniqueInsight(fields.uniqueInsight);
+              // Also trigger backend update
+              triggerUpdate({
+                ...(fields.title && { title: fields.title }),
+                ...(fields.summary && { summary: fields.summary }),
+                ...(fields.problem && { problem: fields.problem }),
+                ...(fields.proposedSolution && { proposedSolution: fields.proposedSolution }),
+                ...(fields.targetAudience && { targetAudience: fields.targetAudience }),
+                ...(fields.uniqueInsight && { uniqueInsight: fields.uniqueInsight }),
+              }, item.id);
+            }}
+          />
         </section>
 
         {/* One Sentence Summary */}

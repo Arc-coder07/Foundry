@@ -7,11 +7,16 @@
   <h1>🚀 Foundry</h1>
   
   <p>
-    <b>The AI-Native Product Development Operating System — from raw idea to deployed product, orchestrated by autonomous agents.</b>
+    <b>Go from messy thought to shipping-ready spec in 5 minutes.</b>
+  </p>
+
+  <p>
+    Capture an idea by voice or text → AI structures it into a dev-ready spec with user stories and edge cases → Push directly to Linear or GitHub and start building.
   </p>
 
   <p>
     <a href="#features"><strong>Features</strong></a> ·
+    <a href="#how-it-works"><strong>How It Works</strong></a> ·
     <a href="#architecture"><strong>Architecture</strong></a> ·
     <a href="#getting-started"><strong>Getting Started</strong></a> ·
     <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
@@ -25,31 +30,104 @@
 
 ## 💡 What is Foundry?
 
-Foundry is an AI-native Product Development Operating System. It is the single environment where a product goes from a raw thought — captured via voice, browser extension, or keyboard — through AI-powered validation, autonomous market research, technical architecture, financial modeling, and all the way to a scaffolded GitHub repo with a live landing page.
+Foundry is the execution bridge between a raw idea and your first commit.
 
-Think of it as the **Autonomous Co-Founder**: a workspace where every idea gets the rigor of a venture partner's review, the depth of a staff engineer's architecture doc, the financial scrutiny of a CFO's spreadsheet, and the execution speed of a full dev team — powered by autonomous AI agents at every phase.
+Most "idea validation" tools generate feel-good reports — *"Your TAM is $100B!"* — that create an illusion of progress. Foundry does the opposite. It acts as your **skeptical CTO**: structuring messy thoughts into dev-ready specs, surfacing the edge cases that'll break your feature on day 1, and pushing actionable issues directly into Linear or GitHub so you can start building immediately.
+
+**The core loop:**
+
+```
+🎙️ Voice or Text Brain Dump
+       ↓
+📝 Structured Canvas (Problem, Solution, Audience)
+       ↓
+🧠 "Expand" → Dev-Ready Spec (User Stories, Acceptance Criteria, Data Model, API Endpoints)
+       ↓
+🔴 "Devil's Advocate" → Edge Cases, Engineering Objections, Failure Modes
+       ↓
+🚀 Push → Linear Issues / GitHub Issues
+       ↓
+💻 Start Coding
+```
+
+**The test for every feature:** *"Does this get me from idea → first commit faster?"* If not, it doesn't belong in Foundry.
 
 ---
 
 ## ✨ Features
 
-### Core Workspace
-- **🧠 AI Co-Pilot** — Instantly **Improve** your prose, **Audit** for vulnerabilities/blindspots, or **Expand** ideas into full MVP scopes, business models, and implementation roadmaps
-- **🗂️ Structured Idea Canvas** — Define problem statements, proposed solutions, unique insights, target audiences, and MVP requirements in a rich Markdown editor
-- **📅 Forge Timeline & Milestones** — Track progress, set milestones, and visualize the product journey
-- **🖼️ Moodboard** — Drag-and-drop image boards with text cards and file attachments
-- **⌨️ Command Palette** — Lightning-fast navigation and actions via `⌘K` / `Ctrl+K`
-- **🌗 Light & Dark Modes** — Stunning, responsive UI with native theme switching
+### 🎙️ Voice-to-Idea (Rambling Parser)
+Capture messy, unstructured thoughts on the go — walking, driving, between meetings — and let AI instantly parse them into structured canvas fields (Problem, Solution, Target Audience, Edge Cases). No more audio graveyards. Your best product insights happen away from the keyboard; Foundry catches them.
+
+### 📝 Structured Idea Canvas
+Define problem statements, proposed solutions, unique insights, and target audiences in a rich Markdown editor. The canvas is the single source of truth that feeds every downstream AI action.
+
+### 🧠 AI "Expand" → Dev-Ready Spec
+One click transforms your idea into an engineering-ready specification:
+- **User Stories** — *As a [user], I want to [action], so that [outcome]*
+- **Acceptance Criteria** — Gherkin format (*Given / When / Then*)
+- **Data Model** — Tables, relationships, and constraints in plain English
+- **API Endpoints** — Method, path, request/response shape
+- **Edge Cases & Error States** — What will break on day 1
+
+This is what [ChatPRD](https://chatprd.ai/) proved founders pay $15/mo for — not generic 15-page enterprise PRD templates.
+
+### 🔴 AI "Devil's Advocate" (Audit)
+AI acts as your most skeptical CTO / co-founder:
+- *"Give me 5 reasons an engineer would reject this architecture."*
+- *"What edge cases will break this feature on day 1?"*
+- *"What will a user complain about in the first week?"*
+
+No SWOT fluff. No "your market is huge!" validation theater. Just **structured doubt** — the only thing founders actually trust AI for.
+
+### 🚀 Push to Linear / GitHub Issues
+After Expand generates your dev-ready spec, one button creates actionable issues directly in **Linear** or **GitHub Issues** from the feature list. No manual copy-paste. Converts Foundry from a thinking tool into an **execution bridge**.
+
+### 💻 Code Scaffold Generation
+Generate working React + Tailwind boilerplate for landing pages and waitlists, pre-loaded with your product context from the canvas. Export or push directly to GitHub.
 
 ### AI & Agent Layer
-- **⚡ Autonomous Agent (Antigravity)** — Trigger deep market research and automated SWOT analysis via a custom Python FastAPI microservice with full MCP tool integration
-- **🔍 Agent Traceability UI** — Full interpretability panel showing the agent's exact chain-of-thought, every tool it called, raw tool outputs, and execution timing — critical for AI alignment and trust
-- **🔀 Multi-Provider LLM Router** — Route AI requests across **6 free-tier providers** (Gemini, Groq, Mistral, Cerebras, OpenRouter, Ollama) with automatic fallback, rate limiting, and task-aware model selection. Stack ~35,000+ free requests/day across providers
-- **🌳 Idea Version Control** — Snapshot ideas, ask AI to pivot them in new directions, and visualize the evolution as an interactive branch tree (powered by React Flow)
+- **⚡ Autonomous Agent (Antigravity)** — Deep research and automated analysis via a custom Python FastAPI microservice with full MCP tool integration
+- **🔍 Agent Traceability UI** — Full interpretability panel showing the agent's exact chain-of-thought, every tool call, raw outputs, and execution timing
+- **🔀 Multi-Provider LLM Router** — Route AI requests across **6 free-tier providers** (Gemini, Groq, Mistral, Cerebras, OpenRouter, Ollama) with automatic fallback, rate limiting, and task-aware model selection. Stack ~35,000+ free requests/day
+- **🌳 Idea Version Control** — Snapshot ideas, pivot them in new directions, and visualize the evolution as an interactive branch tree (powered by React Flow)
 
 ### Integrations & Ecosystem
-- **🔌 MCP Integrations** — Connect external tools (GitHub, Brave Search, Slack, Notion, Filesystem) via Model Context Protocol servers
+- **🔌 MCP Integrations** — Connect external tools (GitHub, Linear, Brave Search, Slack, Notion, Filesystem) via Model Context Protocol servers
 - **📎 Attachments** — Local file uploads with `multer` for documents and reference materials
+
+---
+
+## 🔄 How It Works
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     CAPTURE                              │
+│  🎙️ Voice memo → AI transcribes & parses                │
+│  ⌨️ Text brain dump → structured canvas fields           │
+└──────────────────────┬──────────────────────────────────┘
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│                     STRUCTURE                            │
+│  📝 Canvas: Problem · Solution · Unique Insight          │
+│              Target Audience · Tags                      │
+└──────────────────────┬──────────────────────────────────┘
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│                   AI ACTIONS                             │
+│  🧠 Expand → User Stories, Acceptance Criteria,          │
+│              Data Model, API Endpoints                   │
+│  🔴 Devil's Advocate → Edge Cases, Objections,           │
+│                        Failure Modes                     │
+└──────────────────────┬──────────────────────────────────┘
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│                     EXECUTE                              │
+│  🚀 Push to Linear Issues / GitHub Issues                │
+│  💻 Generate code scaffold → push to GitHub              │
+│  🔗 Open in Cursor / VS Code and start coding            │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -59,7 +137,7 @@ Think of it as the **Autonomous Co-Founder**: a workspace where every idea gets 
 ┌─────────────────────────────────────────────────────────┐
 │                    React 19 Frontend                     │
 │  Editor · Co-Pilot · Agent Trace · Version Tree          │
-│  Moodboard · Timeline · Command Palette · Settings       │
+│  Voice Capture · Timeline · Command Palette · Settings   │
 ├─────────────────────────────────────────────────────────┤
 │                 Node.js / Express Backend                │
 │                                                          │
@@ -67,7 +145,8 @@ Think of it as the **Autonomous Co-Founder**: a workspace where every idea gets 
 │  │  LLM Router  │  │  REST API    │  │  MCP Bridge  │  │
 │  │  (6 providers│  │  (Items,     │  │  (Tool       │  │
 │  │   w/ fallback│  │   Snapshots, │  │   calling)   │  │
-│  │   & rate lim)│  │   Moodboard) │  │              │  │
+│  │   & rate lim)│  │   Push-to-   │  │              │  │
+│  │              │  │   Linear/GH) │  │              │  │
 │  └──────┬───────┘  └──────────────┘  └──────────────┘  │
 │         │                                                │
 │  ┌──────▼──────────────────────────────────────────┐    │
@@ -78,7 +157,7 @@ Think of it as the **Autonomous Co-Founder**: a workspace where every idea gets 
 │  Antigravity Agents · Telemetry Hooks · MCP Tools        │
 ├─────────────────────────────────────────────────────────┤
 │                   JSON File Database                     │
-│              data/db.json · attachments · moodboard      │
+│              data/db.json · attachments                   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -95,6 +174,7 @@ Think of it as the **Autonomous Co-Founder**: a workspace where every idea gets 
 | [@xyflow/react](https://reactflow.dev/) | Interactive node-based diagrams |
 | [Lucide React](https://lucide.dev/) | Icon system |
 | `react-markdown` + `mermaid` | Rich Markdown rendering with diagrams |
+| Web Audio API | Voice capture & transcription |
 
 ### Backend & AI
 | Technology | Purpose |
@@ -160,10 +240,6 @@ Foundry works with just a Gemini key, but you can add more providers for free to
 
 ---
 
-
-
----
-
 ## 📁 Project Structure
 
 ```
@@ -178,16 +254,30 @@ Foundry/
 │   ├── App.tsx                # Main application shell
 │   ├── types.ts               # Shared TypeScript interfaces
 │   └── components/
-│       ├── Editor.tsx          # Workspace editor (canvas, moodboard, trace, versions)
+│       ├── Editor.tsx          # Workspace editor (canvas, co-pilot, trace, versions)
 │       ├── AgentTracePanel.tsx # Agent interpretability timeline
 │       ├── IdeaVersionTree.tsx # React Flow version branching
 │       ├── LLMProviderSettings.tsx # Multi-provider config UI
 │       ├── IntegrationsView.tsx # MCP server management
-│       ├── CoPilotDrawer.tsx   # AI assist drawer
+│       ├── CoPilotDrawer.tsx   # AI assist drawer (Expand / Devil's Advocate)
+│       ├── HomeView.tsx        # Dashboard with quick capture & recent ideas
 │       └── ...
 ├── docs/                      # Feature designs & roadmap
 └── data/                      # JSON database & uploads
 ```
+
+---
+
+## 🗺️ Roadmap
+
+| Priority | Feature | Status |
+|---|---|---|
+| 🔴 P0 | **Voice-to-Idea** — Web Audio API → transcribe → parse into canvas fields | 🚧 In Progress |
+| 🔴 P0 | **Dev-Ready Expand** — User Stories + Acceptance Criteria + Data Model output | ✅ Shipped |
+| 🔴 P0 | **Devil's Advocate Audit** — Engineer-focused objections & edge cases | ✅ Shipped |
+| 🟡 P1 | **Push to GitHub Issues** — Create issues from expanded spec via MCP | 🔜 Next |
+| 🟡 P1 | **Push to Linear** — Create Linear issues from expanded spec via MCP | 🔜 Next |
+| 🟢 P2 | **Code Scaffold** — React + Tailwind landing page from canvas context | 📋 Planned |
 
 ---
 
@@ -201,5 +291,5 @@ This project is private and proprietary unless otherwise stated.
 
 ---
 <div align="center">
-  <i>Built with ❤️ for visionaries and builders.</i>
+  <i>Built for builders who ship, not builders who plan to plan.</i>
 </div>

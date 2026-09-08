@@ -15,7 +15,9 @@ import {
   Settings,
   AlertTriangle,
   Play,
+  HelpCircle,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { LLMProviderSettings } from "./LLMProviderSettings";
 
 // Expanded curated catalog of popular MCP servers
@@ -27,7 +29,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-github",
     envKey: "GITHUB_PERSONAL_ACCESS_TOKEN",
-    icon: "🐙",
+    icon: "Github",
     category: "Developer",
   },
   {
@@ -37,7 +39,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-brave-search",
     envKey: "BRAVE_API_KEY",
-    icon: "🦁",
+    icon: "Compass",
     category: "Search",
   },
   {
@@ -47,7 +49,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y tavily-mcp@latest",
     envKey: "TAVILY_API_KEY",
-    icon: "🔍",
+    icon: "Search",
     category: "Search",
   },
   {
@@ -57,7 +59,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-slack",
     envKey: "SLACK_BOT_TOKEN",
-    icon: "💬",
+    icon: "MessageSquare",
     category: "Communication",
   },
   {
@@ -67,7 +69,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-notion",
     envKey: "NOTION_API_KEY",
-    icon: "📝",
+    icon: "FileText",
     category: "Productivity",
   },
   {
@@ -77,7 +79,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-linear",
     envKey: "LINEAR_API_KEY",
-    icon: "📐",
+    icon: "Kanban",
     category: "Project Management",
   },
   {
@@ -87,7 +89,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-gdrive",
     envKey: "GDRIVE_CREDENTIALS",
-    icon: "📂",
+    icon: "HardDrive",
     category: "Productivity",
   },
   {
@@ -97,7 +99,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-postgres",
     envKey: "DATABASE_URL",
-    icon: "🐘",
+    icon: "Database",
     category: "Database",
   },
   {
@@ -107,7 +109,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-sentry",
     envKey: "SENTRY_AUTH_TOKEN",
-    icon: "🐛",
+    icon: "Bug",
     category: "Developer",
   },
   {
@@ -117,7 +119,7 @@ const MCP_CATALOG = [
     command: "npx",
     args: "-y @modelcontextprotocol/server-filesystem /path/to/allowed/dir",
     envKey: "",
-    icon: "📁",
+    icon: "FolderGit2",
     category: "System",
   },
 ];
@@ -262,7 +264,7 @@ export function IntegrationsView({ onBack }: IntegrationsViewProps) {
       url: customType === "http" ? customUrl : undefined,
       apiToken: customToken || undefined,
       enabled: false,
-      icon: "🔧",
+      icon: "Wrench",
     };
 
     setSaving(true);
@@ -466,7 +468,11 @@ export function IntegrationsView({ onBack }: IntegrationsViewProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-xl border border-outline-variant">
-                      {server.icon || "🔧"}
+                      {(() => {
+                        const iconName = server.icon || "Wrench";
+                        const Icon = (LucideIcons as any)[iconName] || HelpCircle;
+                        return <Icon className="w-5 h-5 text-on-surface" />;
+                      })()}
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -584,7 +590,11 @@ export function IntegrationsView({ onBack }: IntegrationsViewProps) {
                   <div key={entry.id} className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant hover:border-primary/30 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-xl border border-outline-variant">
-                        {entry.icon}
+                        {(() => {
+                          const iconName = entry.icon || "Wrench";
+                          const Icon = (LucideIcons as any)[iconName] || HelpCircle;
+                          return <Icon className="w-5 h-5 text-on-surface" />;
+                        })()}
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-on-surface">{entry.name}</h4>
