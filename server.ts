@@ -603,6 +603,12 @@ app.get("/api/llm/usage", (_req, res) => {
   res.json(llmRouter.getUsageStats());
 });
 
+// Test a provider connection
+app.post("/api/llm/test", async (req, res) => {
+  const result = await llmRouter.testConnection(req.body);
+  res.json(result);
+});
+
 // ─── MCP Server Config API ─────────────────────────────────
 
 interface McpServerConfig {

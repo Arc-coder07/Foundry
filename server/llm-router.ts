@@ -268,6 +268,32 @@ export class LLMRouter {
     return this.providers.length > 0;
   }
 
+  /** Test a specific provider connection */
+  async testConnection(provider: Partial<LLMProviderConfig> & { id: string, baseUrl: string, apiKey: string, defaultModel: string }): Promise<{ success: boolean; latencyMs?: number; error?: string }> {
+    try {
+      const start = Date.now();
+      const request: LLMRequest = {
+        messages: [{ role: 'user', content: 'Say "ok"' }],
+        task: 'general',
+        maxTokens: 5,
+        temperature: 0,
+      };
+
+      if (provider.id === 'gemini') {
+        const client = new GoogleGenAI({ apiKey: provider.apiKey });
+        await client.models.generateContent({ model: provider.defaultModel, contents: 'Say "ok"' });
+      } else if (provider.id === 'ollama') {
+        await this.callOllama(provider as LLMProviderConfig, request);
+      } else {
+        await this.callOpenAICompatible(provider as LLMProviderConfig, request);
+      }
+
+      return { success: true, latencyMs: Date.now() - start };
+    } catch (err: any) {
+      return { success: false, error: err.message || String(err) };
+    }
+  }
+
   // ─── Private: Provider Calls ──────────────────────────────
 
   private async callGemini(

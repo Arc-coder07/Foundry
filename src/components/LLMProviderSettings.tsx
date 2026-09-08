@@ -64,6 +64,8 @@ export function LLMProviderSettings() {
   const [showKeys, setShowKeys] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [expandedUsage, setExpandedUsage] = useState(false);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ id: string, success: boolean, msg: string } | null>(null);
 
   useEffect(() => {
     fetchProviders();
@@ -152,6 +154,37 @@ export function LLMProviderSettings() {
     const p = providers.find(pr => pr.id === id);
     if (!p) return;
     await saveProvider({ ...p, enabled: !p.enabled });
+  }
+
+  async function testProviderConnection(provider: LLMProviderConfig) {
+    setTestingId(provider.id);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/llm/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: provider.id,
+          baseUrl: provider.baseUrl,
+          apiKey: provider.apiKey,
+          defaultModel: provider.defaultModel
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTestResult({ id: provider.id, success: true, msg: `Success (${data.latencyMs}ms)` });
+      } else {
+        setTestResult({ id: provider.id, success: false, msg: data.error || 'Failed' });
+      }
+    } catch (err: any) {
+      setTestResult({ id: provider.id, success: false, msg: err.message || 'Error' });
+    } finally {
+      setTestingId(null);
+      // Auto clear result after 5 seconds
+      setTimeout(() => {
+        setTestResult(prev => prev?.id === provider.id ? null : prev);
+      }, 5000);
+    }
   }
 
   const configuredIds = new Set(providers.map(p => p.id));
@@ -403,25 +436,45 @@ export function LLMProviderSettings() {
                       className="w-full bg-surface-container text-xs px-3 py-2 rounded-lg outline-none border border-outline-variant focus:border-primary/50 font-mono"
                     />
                   </div>
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="px-3 py-1.5 text-xs font-mono text-text-muted hover:text-on-surface cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => saveProvider({
-                        ...provider,
-                        apiKey: editApiKey || provider.apiKey,
-                        defaultModel: editModel || provider.defaultModel,
-                      })}
-                      disabled={saving}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary rounded text-xs font-mono font-bold cursor-pointer transition-colors disabled:opacity-50"
-                    >
-                      <Check className="w-3 h-3" />
-                      SAVE
-                    </button>
+                  <div className="flex gap-2 justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => testProviderConnection({
+                          ...provider,
+                          apiKey: editApiKey || provider.apiKey,
+                          defaultModel: editModel || provider.defaultModel,
+                        })}
+                        disabled={testingId === provider.id || (!editApiKey && !provider.apiKey && provider.id !== 'ollama')}
+                        className="px-3 py-1.5 text-xs font-mono bg-surface-container-high border border-outline-variant hover:border-primary/50 rounded text-on-surface cursor-pointer disabled:opacity-50 transition-colors"
+                      >
+                        {testingId === provider.id ? 'Testing...' : 'Test Connection'}
+                      </button>
+                      {testResult?.id === provider.id && (
+                        <span className={`text-[10px] font-mono font-bold ${testResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                          {testResult.msg}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-3 py-1.5 text-xs font-mono text-text-muted hover:text-on-surface cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => saveProvider({
+                          ...provider,
+                          apiKey: editApiKey || provider.apiKey,
+                          defaultModel: editModel || provider.defaultModel,
+                        })}
+                        disabled={saving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary rounded text-xs font-mono font-bold cursor-pointer transition-colors disabled:opacity-50"
+                      >
+                        <Check className="w-3 h-3" />
+                        SAVE
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
