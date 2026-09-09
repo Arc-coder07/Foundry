@@ -384,15 +384,13 @@ export function LLMProviderSettings() {
                   >
                     <BarChart3 className="w-3.5 h-3.5 text-text-muted" />
                   </button>
-                  {provider.id !== 'gemini' && (
-                    <button
-                      onClick={() => deleteProvider(provider.id)}
-                      className="p-1.5 hover:bg-red-500/10 rounded cursor-pointer transition-colors"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => deleteProvider(provider.id)}
+                    className="p-1.5 hover:bg-red-500/10 rounded cursor-pointer transition-colors"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  </button>
                 </div>
               </div>
 
@@ -425,6 +423,25 @@ export function LLMProviderSettings() {
                     </div>
                     {provider.id === 'ollama' && (
                       <p className="text-[9px] text-text-muted mt-1">Ollama runs locally — no API key needed. Just enter any value (e.g. "local").</p>
+                    )}
+                    {provider.id === 'omniroute' && (
+                      <div className="text-[9px] text-text-muted mt-1 space-y-1">
+                        <p>Generate an API key in your OmniRoute dashboard → API Manager (<code className="text-primary">sk-...</code>).</p>
+                        <p className="font-bold text-on-surface/60">Available auto-routing models:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {['auto', 'auto/best-free', 'auto/coding', 'auto/fast', 'auto/cheap', 'auto/smart', 'auto/offline'].map(m => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setEditModel(m)}
+                              className={`px-1.5 py-0.5 rounded border text-[9px] font-mono cursor-pointer transition-colors ${editModel === m ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-container border-outline-variant/50 hover:border-primary/30 text-text-muted hover:text-on-surface'}`}
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-text-muted/70">Or use any specific model/combo configured in your OmniRoute dashboard.</p>
+                      </div>
                     )}
                   </div>
                   <div>
@@ -493,7 +510,8 @@ export function LLMProviderSettings() {
           <a href="https://console.mistral.ai" className="underline hover:text-primary" target="_blank" rel="noreferrer">Mistral</a> •{' '}
           <a href="https://cloud.cerebras.ai" className="underline hover:text-primary" target="_blank" rel="noreferrer">Cerebras</a> •{' '}
           <a href="https://openrouter.ai" className="underline hover:text-primary" target="_blank" rel="noreferrer">OpenRouter</a> •{' '}
-          <a href="https://ollama.com" className="underline hover:text-primary" target="_blank" rel="noreferrer">Ollama</a>
+          <a href="https://ollama.com" className="underline hover:text-primary" target="_blank" rel="noreferrer">Ollama</a> •{' '}
+          <a href="https://github.com/diegosouzapw/OmniRoute" className="underline hover:text-primary" target="_blank" rel="noreferrer">OmniRoute</a>
         </p>
       </div>
     </div>

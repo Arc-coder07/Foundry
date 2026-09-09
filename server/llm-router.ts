@@ -123,11 +123,11 @@ export const PROVIDER_PRESETS: Omit<LLMProviderConfig, 'apiKey' | 'enabled' | 'p
   {
     id: 'omniroute',
     name: 'OmniRoute',
-    baseUrl: 'http://localhost:20128/v1',
-    defaultModel: 'openai/gpt-4o-mini',
+    baseUrl: 'http://localhost:20128',
+    defaultModel: 'auto/best-free',
     maxRPM: 60,
     maxRPD: 10000,
-    capabilities: ['chat', 'json'],
+    capabilities: ['chat', 'json', 'vision'],
     icon: 'Network',
   }
 ];
@@ -268,29 +268,54 @@ export class LLMRouter {
     return this.providers.length > 0;
   }
 
-  /** Test a specific provider connection */
+  /** Test a specific provider connection with a short timeout */
   async testConnection(provider: Partial<LLMProviderConfig> & { id: string, baseUrl: string, apiKey: string, defaultModel: string }): Promise<{ success: boolean; latencyMs?: number; error?: string }> {
     try {
       const start = Date.now();
-      const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Say "ok"' }],
-        task: 'general',
-        maxTokens: 5,
-        temperature: 0,
-      };
 
       if (provider.id === 'gemini') {
         const client = new GoogleGenAI({ apiKey: provider.apiKey });
-        await client.models.generateContent({ model: provider.defaultModel, contents: 'Say "ok"' });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15_000);
+        try {
+          await client.models.generateContent({ model: provider.defaultModel, contents: 'Say "ok"' });
+        } finally {
+          clearTimeout(timer);
+        }
       } else if (provider.id === 'ollama') {
-        await this.callOllama(provider as LLMProviderConfig, request);
+        const res = await fetch(`${provider.baseUrl}/api/tags`, {
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } else {
-        await this.callOpenAICompatible(provider as LLMProviderConfig, request);
+        // OpenAI-compatible: send a minimal chat completion with short timeout
+        const body = {
+          model: provider.defaultModel,
+          messages: [{ role: 'user', content: 'Say "ok"' }],
+          max_tokens: 5,
+          temperature: 0,
+        };
+        const res = await fetch(`${provider.baseUrl}/v1/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${provider.apiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+        }
       }
 
       return { success: true, latencyMs: Date.now() - start };
     } catch (err: any) {
-      return { success: false, error: err.message || String(err) };
+      const msg = err.name === 'TimeoutError' || err.name === 'AbortError'
+        ? 'Connection timed out (15s). Is the service running?'
+        : (err.message || String(err));
+      return { success: false, error: msg };
     }
   }
 
