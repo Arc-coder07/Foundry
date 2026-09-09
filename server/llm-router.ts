@@ -303,7 +303,7 @@ export class LLMRouter {
             'Authorization': `Bearer ${provider.apiKey}`,
           },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(45_000),
         });
         if (!res.ok) {
           const text = await res.text().catch(() => '');
@@ -314,7 +314,7 @@ export class LLMRouter {
       return { success: true, latencyMs: Date.now() - start };
     } catch (err: any) {
       const msg = err.name === 'TimeoutError' || err.name === 'AbortError'
-        ? 'Connection timed out (15s). Is the service running?'
+        ? 'Connection timed out (45s). OmniRoute may be falling back through multiple providers.'
         : (err.message || String(err));
       return { success: false, error: msg };
     }
