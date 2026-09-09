@@ -294,6 +294,7 @@ export class LLMRouter {
           messages: [{ role: 'user', content: 'Say "ok"' }],
           max_tokens: 5,
           temperature: 0,
+          stream: false,
         };
         const res = await fetch(`${provider.baseUrl}/v1/chat/completions`, {
           method: 'POST',
@@ -403,6 +404,7 @@ export class LLMRouter {
       messages: request.messages,
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 4096,
+      stream: false,
     };
 
     if (request.responseFormat === 'json') {
