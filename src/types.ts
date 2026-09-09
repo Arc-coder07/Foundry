@@ -109,6 +109,10 @@ export interface WorkspaceItem {
   createdAt: string;
   updatedAt: string;
   
+  // Historical / AI context
+  copilotGenerations?: CopilotGeneration[];
+  agentTraces?: AgentTraceEvent[];
+  
   relatedIds: string[];
   timeline: TimelineEntry[];
   decisions: DecisionEntry[];

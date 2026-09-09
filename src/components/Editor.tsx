@@ -37,6 +37,7 @@ interface EditorProps {
   onCreateMilestone: (milestone: Omit<Milestone, 'id'>) => void;
   onUpdateMilestone: (milestone: Milestone) => void;
   onDeleteMilestone: (id: string) => void;
+  onOpenCoPilotHistory?: (generationId: string) => void;
 }
 
 export function Editor({
@@ -49,7 +50,8 @@ export function Editor({
   milestones,
   onCreateMilestone,
   onUpdateMilestone,
-  onDeleteMilestone
+  onDeleteMilestone,
+  onOpenCoPilotHistory
 }: EditorProps) {
   // Local state for interactive editing to allow snappy inputs before debouncing / saving
   const [title, setTitle] = useState(item.title);
@@ -347,6 +349,22 @@ export function Editor({
           )}
         </button>
         <button
+          onClick={() => setEditorTab('ai-history')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border-b-2 -mb-px ${
+            editorTab === 'ai-history'
+              ? 'text-primary border-primary'
+              : 'text-text-muted border-transparent hover:text-on-surface hover:border-outline-variant/40'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          AI History
+          {(item.copilotGenerations || []).length > 0 && (
+            <span className="text-[9px] font-mono text-text-muted bg-surface-container border border-outline-variant px-1.5 py-0.5 rounded">
+              {(item.copilotGenerations || []).length}
+            </span>
+          )}
+        </button>
+        <button
           onClick={() => setEditorTab('versions')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border-b-2 -mb-px ${
             editorTab === 'versions'
@@ -388,6 +406,47 @@ export function Editor({
           agentStatus={item.agentStatus}
           agentTokens={item.agentTokens}
         />
+      ) : editorTab === 'ai-history' ? (
+        /* AI History Tab */
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-8">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-display text-on-surface">Co-Pilot Generation History</h2>
+          </div>
+          {(!item.copilotGenerations || item.copilotGenerations.length === 0) ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-surface-container-low border border-outline-variant/30 rounded-xl text-center space-y-3">
+              <Sparkles className="w-8 h-8 text-outline-variant" />
+              <p className="text-sm font-mono text-text-muted">No AI generations yet.</p>
+              <p className="text-xs text-text-muted/60 max-w-sm">Use the "Improve", "Audit", or "Expand" buttons on the canvas to generate AI insights.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {item.copilotGenerations.map(gen => (
+                <div key={gen.id} className="flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container border border-outline-variant/50 rounded-xl transition-colors group">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
+                        {gen.action}
+                      </span>
+                      <span className="text-xs text-on-surface-variant">
+                        {new Date(gen.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-text-muted line-clamp-1 mt-1 font-mono">
+                      {gen.content.slice(0, 100).replace(/\n/g, ' ')}...
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onOpenCoPilotHistory?.(gen.id)}
+                    className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-mono uppercase font-bold tracking-wider rounded transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       ) : editorTab === 'versions' ? (
         /* Versions / Branching Tab */
         <IdeaVersionTree

@@ -631,17 +631,27 @@ export default function App() {
             {activeItemId && activeItem ? (
               /* ACTIVE ITEM EDITOR */
               <PageTransition viewKey="editor">
-                <Editor
+                <Editor 
+                  key={activeItemId}
                   item={activeItem}
                   allItems={items}
                   onUpdate={handleUpdateItem}
                   onDelete={handleDeleteItem}
-                  onSwitchItem={(id) => setActiveItemId(id)}
+                  onSwitchItem={setActiveItemId}
                   isSyncing={isSyncing}
-                  milestones={milestones}
-                  onCreateMilestone={handleCreateMilestone}
+                  milestones={milestones.filter(m => activeItem.type === 'Idea' && m.itemId === activeItemId)}
+                  onCreateMilestone={(m) => handleCreateMilestone({ ...m, itemId: activeItemId })}
                   onUpdateMilestone={handleUpdateMilestone}
                   onDeleteMilestone={handleDeleteMilestone}
+                  onOpenCoPilotHistory={(genId) => {
+                    const gen = activeItem.copilotGenerations?.find(g => g.id === genId);
+                    if (gen) {
+                      setCoPilotAction(gen.action as any);
+                      setCoPilotContent(gen.content);
+                      setCoPilotLoading(false);
+                      setCoPilotOpen(true);
+                    }
+                  }}
                 />
               </PageTransition>
              ) : currentView === "profile" ? (

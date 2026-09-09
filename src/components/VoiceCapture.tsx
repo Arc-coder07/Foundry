@@ -29,6 +29,7 @@ export function VoiceCapture({ itemId, onParsed, onError }: VoiceCaptureProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [duration, setDuration] = useState(0);
   const [providerInfo, setProviderInfo] = useState<{ provider?: string; model?: string; latencyMs?: number } | null>(null);
+  const [parsedFields, setParsedFields] = useState<Record<string, string> | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
@@ -158,14 +159,22 @@ export function VoiceCapture({ itemId, onParsed, onError }: VoiceCaptureProps) {
 
       setProviderInfo({ provider: data.provider, model: data.model, latencyMs: data.latencyMs });
       setState("done");
-      onParsed(data.fields);
+      setParsedFields(data.fields);
     } catch (err: any) {
       console.error("Voice parse error:", err);
       setErrorMessage(err.message || "Failed to parse voice input.");
       setState("error");
       onError?.(err.message);
     }
-  }, [transcript, interimTranscript, itemId, onParsed, onError]);
+  }, [transcript, interimTranscript, itemId, onError]);
+
+  const applyParsedFields = () => {
+    if (parsedFields) {
+      onParsed(parsedFields);
+      setParsedFields(null);
+      reset();
+    }
+  };
 
   // Reset everything
   const reset = () => {
@@ -267,13 +276,49 @@ export function VoiceCapture({ itemId, onParsed, onError }: VoiceCaptureProps) {
         </div>
       )}
 
-      {/* Success State */}
-      {state === "done" && providerInfo && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg text-xs text-green-400 font-mono">
-          <Sparkles className="w-3.5 h-3.5" />
-          Canvas fields populated
-          {providerInfo.provider && <span className="text-green-400/60">· {providerInfo.provider}</span>}
-          {providerInfo.latencyMs && <span className="text-green-400/60">· {(providerInfo.latencyMs / 1000).toFixed(1)}s</span>}
+      {/* Success / Preview State */}
+      {state === "done" && parsedFields && (
+        <div className="flex flex-col gap-3 p-4 bg-surface-container border border-primary/30 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-mono text-primary font-bold">
+              <Sparkles className="w-3.5 h-3.5" />
+              AI EXTRACTED FIELDS
+            </div>
+            {providerInfo && (
+              <div className="text-[10px] font-mono text-text-muted">
+                {providerInfo.provider} · {(providerInfo.latencyMs! / 1000).toFixed(1)}s
+              </div>
+            )}
+          </div>
+          
+          <div className="grid gap-2 text-xs">
+            {Object.entries(parsedFields).map(([key, val]) => (
+              val ? (
+                <div key={key} className="flex flex-col gap-0.5">
+                  <span className="font-mono text-[10px] uppercase text-text-muted">{key}</span>
+                  <span className="text-on-surface bg-surface-container-lowest p-2 rounded border border-outline-variant/30">{val}</span>
+                </div>
+              ) : null
+            ))}
+          </div>
+
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={applyParsedFields}
+              className="flex-1 py-2 bg-primary text-on-primary rounded font-mono font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-opacity"
+            >
+              Apply to Canvas
+            </button>
+            <button
+              onClick={() => {
+                setParsedFields(null);
+                setState("idle");
+              }}
+              className="px-4 py-2 bg-surface-container-highest text-on-surface rounded font-mono font-bold text-xs uppercase tracking-wider hover:bg-surface-container-highest/80 transition-colors"
+            >
+              Discard
+            </button>
+          </div>
         </div>
       )}
     </div>
